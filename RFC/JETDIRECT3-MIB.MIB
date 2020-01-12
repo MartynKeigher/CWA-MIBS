@@ -1,0 +1,4511 @@
+--
+--  /****************************************************************/
+--  /* (C) COPYRIGHT HEWLETT-PACKARD COMPANY 1999.  ALL RIGHTS      */
+--  /* RESERVED.  NO PART OF THIS DOCUMENT MAY BE PHOTOCOPIED,      */
+--  /* REPRODUCED OR TRANSLATED WITHOUT THE PRIOR WRITTEN CONSENT   */
+--  /* OF HEWLETT-PACKARD COMPANY.                                  */
+--  /****************************************************************/
+--
+--
+-- File name: JDMibCV5.mib
+-- 
+-- This MIB file is the Master MIB file for the JetDirect SNMP implementation.
+-- It includes all objects defined for both internal cards and external boxes.
+--
+-- This MIB successfully compiles with Epilogue and MG-Soft MIB compilers
+ 
+JETDIRECT3-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+   enterprises, TimeTicks
+      FROM RFC1155-SMI
+   DisplayString, TEXTUAL-CONVENTION
+      FROM SNMPv2-TC
+   OBJECT-TYPE, IpAddress, Unsigned32, Integer32, Counter32, Gauge32, MODULE-IDENTITY
+      FROM SNMPv2-SMI;
+
+hp  MODULE-IDENTITY
+    LAST-UPDATED "0105231945Z"
+    ORGANIZATION "Hewlett-Packard Company"
+    CONTACT-INFO "Customer Care Center"
+	DESCRIPTION  "Objects used in HP JetDirect Print Servers"
+
+	REVISION "0008011000Z"
+	DESCRIPTION  "Major update (firmware X.21.XX)."
+
+	REVISION "0012291430Z"
+	DESCRIPTION  "Added selectable values."
+                  
+	REVISION "0101021600Z"
+	DESCRIPTION  "Removed objects that have been commented out"
+	
+	REVISION "0102161600Z"
+	DESCRIPTION  "Added missing objects npCtlTknob (2 items) and npPortUsb (5 items)"	                  
+
+	REVISION "0102231600Z"
+	DESCRIPTION  "Removed unused Hpicf branch MIB objects: hpicfDownloadOwnerAddress, 
+                  hpicfDownloadOwnerDomain, and hpicfDownloadResetType."
+                  
+    REVISION "0105231945Z"
+    DESCRIPTION  "Renamed net-peripheral to netPeripheral
+    			  and net-printer to netPrinter."
+	
+
+    -- Changed SBL 10/21/2010 for Mib Browser   
+    -- Original Line:
+    -- ::= { iso(1) org(3) dod(6) internet(1) private(4) enterprises(1) 11 }
+    -- New Line:
+    ::= { enterprises 11 }
+
+
+nm                      OBJECT IDENTIFIER ::= { hp 2 }
+hpsystem                	OBJECT IDENTIFIER ::= { nm 3 }    -- Changed to hpsystem SBL
+interface               OBJECT IDENTIFIER ::= { nm 4 }
+netPeripheral          	OBJECT IDENTIFIER ::= { hpsystem 9 }
+netPrinter             	OBJECT IDENTIFIER ::= { netPeripheral 1 }
+generalDeviceStatus     OBJECT IDENTIFIER ::= { netPrinter 1 }        
+gdStatusEntry           OBJECT IDENTIFIER ::= { generalDeviceStatus 2 } 
+netPrinterType          OBJECT IDENTIFIER ::= { netPrinter 2 }
+ieee8023Mac             OBJECT IDENTIFIER ::= { interface 1 }
+ieee8025Mac             OBJECT IDENTIFIER ::= { interface 2 }
+npCard                  OBJECT IDENTIFIER ::= { interface 3 }
+npSys                   OBJECT IDENTIFIER ::= { npCard 1 }
+npConns                 OBJECT IDENTIFIER ::= { npCard 4 }
+npCfg                   OBJECT IDENTIFIER ::= { npCard 5 }
+npTcp                   OBJECT IDENTIFIER ::= { npCard 6 }
+npCtl                   OBJECT IDENTIFIER ::= { npCard 7 }
+npNpi                   OBJECT IDENTIFIER ::= { npCard 8 }
+npElt                   OBJECT IDENTIFIER ::= { npCard 9 }
+npIpx                   OBJECT IDENTIFIER ::= { npCard 10 }
+npDm                    OBJECT IDENTIFIER ::= { npCard 11 }
+llcconstategroup        OBJECT IDENTIFIER ::= { npCard 12 }
+npPort                  OBJECT IDENTIFIER ::= { npCard 13 }
+npXip                   OBJECT IDENTIFIER ::= { npCard 14 }
+npCRC                   OBJECT IDENTIFIER ::= { npCard 15 }
+npDhcp                  OBJECT IDENTIFIER ::= { npCard 16 }
+npScan                  OBJECT IDENTIFIER ::= { npCard 17 }
+npWeb		        	OBJECT IDENTIFIER ::= { npCard 18 }
+npAtk                   OBJECT IDENTIFIER ::= { npCard 19 }
+trap                    OBJECT IDENTIFIER ::= { nm 13 }
+trapDest                OBJECT IDENTIFIER ::= { trap 1 }
+icf                     OBJECT IDENTIFIER ::= { nm 14 }
+snmpAccess              OBJECT IDENTIFIER ::= { nm 15 }
+community               OBJECT IDENTIFIER ::= { snmpAccess 1}
+hpicfObjects            OBJECT IDENTIFIER ::= { icf 11 }
+hpicfCommon             OBJECT IDENTIFIER ::= { hpicfObjects 1 }
+hpicfDownload           OBJECT IDENTIFIER ::= { hpicfCommon 3 }
+
+
+-- PML objects added to accomodate the object total-ENGINE-PAGE-COUNT
+
+netPML                  OBJECT IDENTIFIER ::= { netPeripheral 4 }
+netPMLtrap              OBJECT IDENTIFIER ::= { netPML 1 }
+netPMLmgmt              OBJECT IDENTIFIER ::= { netPML 2 }
+device                  OBJECT IDENTIFIER ::= { netPMLmgmt 1 }
+destination-subsystem   OBJECT IDENTIFIER ::= { device 4 }
+print-engine            OBJECT IDENTIFIER ::= { destination-subsystem 1 }
+
+-- toptools branch
+hpWebMgmt               OBJECT IDENTIFIER ::= { nm 36 }
+hpHttpMgMod             OBJECT IDENTIFIER ::= { hpWebMgmt 1 }
+hpHttpMgObjects         OBJECT IDENTIFIER ::= { hpHttpMgMod 1 } 
+hpHttpMgDefaults        OBJECT IDENTIFIER ::= { hpHttpMgObjects 1 }
+
+
+npNpiCardStatusEntry             OBJECT IDENTIFIER ::= { npNpi 1 } 
+npNpiPeripheralAttributeEntry    OBJECT IDENTIFIER ::= { npNpi 3 } 
+npNpiCardAttributeEntry          OBJECT IDENTIFIER ::= { npNpi 4 } 
+npIpxNdsFullyQualifiedName       OBJECT IDENTIFIER ::= { npIpx 10 } 
+npIpxObsoleteServerConnInfo      OBJECT IDENTIFIER ::= { npIpx 12 } 
+
+
+-- Textual Conventions  
+DisplayString128 ::= TEXTUAL-CONVENTION 
+	STATUS  current
+	DESCRIPTION
+        "A display string from 0 to 128 in length"
+    SYNTAX DisplayString (SIZE (0..128))
+
+-- HP proprietary objects
+
+-- The Status Group
+
+gdStatusBytes OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of valid bytes in the gdStatusEntry
+         array."
+    ::={ generalDeviceStatus 1 }
+
+
+gdStatusLineState OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This describes the line state of the peripheral.
+         When non-zero, the peripheral is off-line.  When
+         zero the peripheral is on-line."
+    ::={ gdStatusEntry 1 }
+
+gdStatusPaperState OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This describes the state of the paper on the peripheral.
+         When non-zero, the peripheral has a paper problem. When
+         zero, the peripheral does not have a paper problem."
+    ::={ gdStatusEntry 2 }
+
+gdStatusInterventionState OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This describes the intervention state of the
+         peripheral.  When non-zero, the peripheral requires
+         human intervention to continue working.  When
+         zero, it requires no assistance."
+    ::={ gdStatusEntry 3 }
+
+gdStatusNewMode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This indicates to which read channel state the
+         card should move.  When non-zero, the card should
+         indicate that the read channel is idle.  When zero,
+         the card should indicate that the read channel is
+         operating.  This object is Lan Manager io channel 
+         specific.  It is kept here for backward compatibility.
+
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture. 
+         No current supported applications use this object."
+    ::={ gdStatusEntry 4 }
+
+gdStatusConnectionTerminationAck OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This indicates whether the peripheral is waiting for
+         the Connection termination ACK.  When non-zero, it
+         is waiting.  When zero, it is not waiting."
+    ::={ gdStatusEntry 5 }
+
+gdStatusPeripheralError OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is the error code from the peripheral."
+    ::={ gdStatusEntry 6 }
+
+gdStatusPaperOut OBJECT-TYPE
+    SYNTAX  Integer32  
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral is out of paper.
+                off (0),
+                paper-out-or-paper-mount (1),
+                manual-paper-feed-needed (2)
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 8 }
+
+gdStatusPaperJam OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral has a paper jam.
+              off (0),
+              paper-jam(1)
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 9 }
+
+gdStatusTonerLow OBJECT-TYPE
+    SYNTAX  Integer32  
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral has a low toner condition.
+              off (0),
+              toner-low (1),
+              no-toner-cartridge (2)
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 10 }
+
+gdStatusPagePunt OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral did not receive data fast
+         enough to keep up with the print engine when generating a page.
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 11 }
+
+gdStatusMemoryOut OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral did not have enough memory
+         to render an image on a page.
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 12 }
+
+gdStatusIoActive OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+         "This indicates that the peripheral is processing data from
+         this I/O interface card. For some peripherals, such as the
+         HP LaserJet IIISi printer or HP DesignJet plotter,
+         this value is always a zero (0).
+
+         For X.20.06 firmware and later firmware releases, this object is 
+         not relevant. In order not to break legacy applications which call this
+         object in multi-varbind requests, this value is always zero (0)."
+ 
+    ::={ gdStatusEntry 13 }
+
+gdStatusBusy OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral is busy processing
+         print/plot data.
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 14 }
+
+gdStatusWait OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral is waiting for print/plot
+         data to process.
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 15 }
+
+gdStatusInitialize OBJECT-TYPE
+    SYNTAX  Integer32  
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral is initializing or
+         warming up.
+              off (0),
+              initializing (1),
+              warm-up(2)
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 16 }
+
+gdStatusDoorOpen OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral cover or door is open.
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 17 }
+
+gdStatusPrinting OBJECT-TYPE
+    SYNTAX  Integer32  
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral is printing or otherwise
+         marking or moving paper.
+              off (0),
+              ordinary-page (1),
+              test-fonts-config-or-start-page (2)
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 18 }
+
+gdStatusPaperOutput OBJECT-TYPE
+    SYNTAX  Integer32  
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the peripheral has a paper output problem
+         such as the output storage bin being full.
+              off (0),
+              output-storage-full (1)
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this value is always a zero (0)."
+    ::={ gdStatusEntry 19 }
+
+gdStatusReserved OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE (0..13))
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This is the reserved area that is not currently
+         used, but will allow for growth within the gdStatusEntry table."
+    ::={ gdStatusEntry 20 }
+
+gdStatusNovBusy OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This indicates if this channel is active.  If the 
+         value is 0 then this channel is active or the peripheral
+         is idle.  If this value is non-zero then another channel
+         is active.  This is the Novell io channel"
+    ::={ gdStatusEntry 21 }
+
+gdStatusLlcBusy OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This indicates if this channel is active.  If the 
+         value is 0 then this channel is active or the peripheral
+         is idle.  If this value is non-zero then another channel
+         is active.  This is the LLC io channel"
+    ::={ gdStatusEntry 22 }
+
+gdStatusTcpBusy OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This indicates if this channel is active.  If the 
+         value is 0 then this channel is active or the peripheral
+         is idle.  If this value is non-zero then another channel
+         is active.  This is the TCP io channel"
+    ::={ gdStatusEntry 23 }
+
+gdStatusAtBusy OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This indicates if this channel is active.  If the 
+         value is 0 then this channel is active or the peripheral
+         is idle.  If this value is non-zero then another channel
+         is active.  This is the Apple talk io channel"
+    ::={ gdStatusEntry 24 }
+
+gdStatusDisplay OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The string diplayed on the peripheral front panel.
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this is always a zero length string."
+    ::={ generalDeviceStatus 3 }
+
+gdStatusJobName OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The current job name set by the peripheral.
+         For some peripherals, such as the HP LaserJet IIISi printer
+         or HP DesignJet plotter, this is always a zero length string."
+    ::={ generalDeviceStatus 4 }
+
+gdStatusSource OBJECT-TYPE
+    SYNTAX  DisplayString 
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "A string indicating the name of the physical port or protocol
+         the printer is currently getting data from."
+    ::={ generalDeviceStatus 5 }
+
+gdStatusPapstatus OBJECT-TYPE
+    SYNTAX  DisplayString 
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "A string indicating the Appletalk papstatus response."
+    ::={ generalDeviceStatus 6 }
+
+gdStatusId OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "A formatted string describing this peripheral."
+    ::={ generalDeviceStatus 7 }
+
+gdStatusDisplayCode OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This is the display code that the peripheral uses
+         to tell the card what type of display the front
+         panel of the printer is.
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ generalDeviceStatus 8 }
+
+gdStatusNlsCode OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This value is the representation of what native
+         language the printer is in currently."
+    ::={ generalDeviceStatus 9 }
+
+gdStatusJobTimeout OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  obsolete --
+    DESCRIPTION
+        "This value represents (in seconds) the maximum time of
+         inactivity which must elapse before the JetDirect card
+         switches from the current network protocol to another when
+         a normal end of job is not detected."
+    ::={ generalDeviceStatus 10 }
+
+gdStatusPjlUstatus OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  obsolete --
+    DESCRIPTION
+        "This object will enable/disable PJL ustatus.
+                  disabled (0),
+                  enabled (1)"
+    ::={ generalDeviceStatus 11 }
+
+gdStatusLaaSupport OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This value represents what protocols Locally Administered
+         addressing is supported over.  This is currently 0 for
+         802.3 cards and 7 for 802.5 cards.  LAA is not supported
+         on 802.3.  The value is a mask of bits, 1 for each of the
+         protocols below. 
+         +-----------------------------------------------+
+         | NA  | NA  | NA  | NA  | NA  | TCP | LLC | NOV |
+         +-----------------------------------------------+"
+    ::={ generalDeviceStatus 12 }
+
+
+gdPasswords OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE (0..255))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This object is used as a 256 byte NVRAM area for JetAdmin.  It
+         is completely managed by JetAdmin.  Initially it is initialized
+         to all zeros.  A coldboot will re-initialize to all zeros."
+    ::={ generalDeviceStatus 13 }
+   
+gdStatusAtPrinterName OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..255))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "The AppleTalk name of the printer."
+    ::={ generalDeviceStatus 18 }
+
+gdStatusAtPrinterType OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..255))
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The AppleTalk type of the printer."
+    ::={ generalDeviceStatus 19 }
+
+pmlTrapEnable  OBJECT-TYPE
+    SYNTAX  OBJECT IDENTIFIER
+    MAX-ACCESS read-write
+    STATUS  current 
+    DESCRIPTION
+    "This OID is used to enable individual peripheral trappable objects through JetDirect."
+    ::= { netPMLtrap 1 }
+
+
+pmlTrapDisable  OBJECT-TYPE
+    SYNTAX  OBJECT IDENTIFIER
+    MAX-ACCESS read-write
+    STATUS  current 
+    DESCRIPTION
+    "This OID is used to disable individual peripheral trappable objects through JetDirect."
+    ::= { netPMLtrap 2}
+
+
+
+-- the netPrinterType group
+
+    hplj5si    OBJECT IDENTIFIER ::={ netPrinterType 1  }
+    hplj5m     OBJECT IDENTIFIER ::={ netPrinterType 2  }
+    hplj6      OBJECT IDENTIFIER ::={ netPrinterType 3  }
+    hplj2100   OBJECT IDENTIFIER ::={ netPrinterType 4  }
+    hplj4000   OBJECT IDENTIFIER ::={ netPrinterType 5  }
+    hplj5000   OBJECT IDENTIFIER ::={ netPrinterType 6  }
+    hplj8100   OBJECT IDENTIFIER ::={ netPrinterType 7  }
+    hpclj4500  OBJECT IDENTIFIER ::={ netPrinterType 8  }
+    hplj8000   OBJECT IDENTIFIER ::={ netPrinterType 9  }
+    notused1   OBJECT IDENTIFIER ::={ netPrinterType 10 }
+    notused2   OBJECT IDENTIFIER ::={ netPrinterType 11 }
+    hplj4050   OBJECT IDENTIFIER ::={ netPrinterType 12 }
+    notused3   OBJECT IDENTIFIER ::={ netPrinterType 13 }
+    hpclj4550  OBJECT IDENTIFIER ::={ netPrinterType 14 }
+    notused4   OBJECT IDENTIFIER ::={ netPrinterType 15 }
+    hpclj8500  OBJECT IDENTIFIER ::={ netPrinterType 16 }
+    hplj8150   OBJECT IDENTIFIER ::={ netPrinterType 17 }
+   
+
+-- the Ieee8023Mac group
+
+
+ieee8023MacTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF Ieee8023MacEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current
+    DESCRIPTION
+        "A list of ieee8023MacEntry entries."
+    ::= { ieee8023Mac 1 }
+
+ieee8023MacEntry OBJECT-TYPE
+    SYNTAX  Ieee8023MacEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current
+    DESCRIPTION
+        "An entry containing the hp ieee8023 extentions."
+    INDEX   { ieee8023MacIndex }
+    ::= { ieee8023MacTable 1 }
+
+Ieee8023MacEntry ::= SEQUENCE {
+    ieee8023MacIndex
+        Integer32,
+    ieee8023MacTransmitteds
+        Counter32,
+    ieee8023MacNotTransmitteds
+        Counter32,
+    ieee8023MacDeferreds
+        Counter32,
+    ieee8023MacCollisions
+        Counter32,
+    ieee8023MacSingleCollisions
+        Counter32,
+    ieee8023MacMultipleCollisions
+        Counter32,
+    ieee8023MacExcessCollisions
+        Counter32,
+    ieee8023MacLateCollisions
+        Counter32,
+    ieee8023MacCarrierLostErrors
+        Counter32,
+    ieee8023MacNoHeartBeatErrors
+        Counter32,
+    ieee8023MacFramesReceiveds
+        Counter32,
+    ieee8023MacUndeliverableFramesReceiveds
+        Counter32,
+    ieee8023MacCrcErrors
+        Counter32,
+    ieee8023MacAlignmentErrors
+        Counter32,
+    ieee8023MacResourceErrors
+        Counter32,
+    ieee8023MacControlFieldErrors
+        Counter32,
+    ieee8023MacUnknownProtocolErrors
+        Counter32,
+    ieee8023MacMulticastsAccepteds
+        Counter32,
+    --ieee8023MacMulticastsAccepteds
+    --    Counter32,
+    ieee8023MacInfiniteDeferrals
+        Counter32,
+    ieee8023MacUnderflowErrors
+        Counter32,
+    ieee8023MacNoResources
+        Counter32,
+    ieee8023MacLengthErrors
+        Counter32
+}
+
+ieee8023MacIndex OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The index value which uniquely identifies the interface/port to
+         which this entry is applicable.  The interface/port identified by
+         a particular value of this index is the same interface/port as
+         identified by the same value of ifIndex."
+    ::= { ieee8023MacEntry 1 }
+
+ieee8023MacTransmitteds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames successfully transmitted."
+    ::= { ieee8023MacEntry 2 }
+
+ieee8023MacNotTransmitteds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames not transmitted."
+    ::= { ieee8023MacEntry 3 }
+
+ieee8023MacDeferreds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of frames which were successfully transmitted after a
+         deferral.  If any collisions occurred before transmission,
+         xmtDeferredTransmission isn't incremented."
+    ::= { ieee8023MacEntry 4 }
+
+ieee8023MacCollisions OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Total number of transmit attempts that were retransmitted due to
+         collisions, and are subsequently transmitted successfully."
+    ::= { ieee8023MacEntry 5 }
+
+ieee8023MacSingleCollisions OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of transmit attempts that are involved in a single
+         collision, and are subsequently transmitted successfully."
+    ::= { ieee8023MacEntry 6 }
+
+ieee8023MacMultipleCollisions OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of transmit attempts that are involved in between one and
+         fifteen collision attempts, and are subsequently transmitted
+         successfully."
+    ::= { ieee8023MacEntry 7 }
+
+ieee8023MacExcessCollisions OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of transmits that occur after more than 15 collisions,
+         and are subsequently transmitted successfully."
+    ::= { ieee8023MacEntry 8 }
+
+ieee8023MacLateCollisions OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of collisions that occurred after one end-to-end frame
+         propagation delay."
+    ::= { ieee8023MacEntry 9 }
+
+ieee8023MacCarrierLostErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of times that carrier sense was lost when attempting to
+         transmit."
+    ::= { ieee8023MacEntry 10 }
+
+ieee8023MacNoHeartBeatErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of times the MAU failed to assert SQE after
+         transmitting a packet."
+    ::= { ieee8023MacEntry 11 }
+
+ieee8023MacFramesReceiveds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames successfully received."
+    ::= { ieee8023MacEntry 12 }
+
+ieee8023MacUndeliverableFramesReceiveds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames received that could not be delivered because
+         the software buffer was overrun when frames were sent faster than
+         they could be received."
+    ::= { ieee8023MacEntry 13 }
+
+ieee8023MacCrcErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of Cyclical Redundancy Check (CRC) errors detected."
+    ::= { ieee8023MacEntry 14 }
+
+ieee8023MacAlignmentErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames received that were both misaligned and had
+         bad CRC."
+    ::= { ieee8023MacEntry 15 }
+
+ieee8023MacResourceErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames received that were lost due to lack of
+         resources."
+    ::= { ieee8023MacEntry 16 }
+
+ieee8023MacControlFieldErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames received with errors in the control field."
+    ::= { ieee8023MacEntry 17 }
+
+ieee8023MacUnknownProtocolErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number frames dropped because the type field or sap field
+         referenced an invalid protocol."
+    ::= { ieee8023MacEntry 18 }
+
+ieee8023MacMulticastsAccepteds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of accepted muliticast addresses."
+    ::= { ieee8023MacEntry 19 }
+
+ieee8023MacInfiniteDeferrals OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames not transmitted successfully
+         due to excessive number of deferrals."
+    ::= { ieee8023MacEntry 20 }
+
+ieee8023MacUnderflowErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames not transmitted successfully
+         because an underflow occurred on the transmit."
+    ::= { ieee8023MacEntry 21 }
+
+ieee8023MacNoResources OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames not transmitted successfully
+         because the MAC lacked resources to handle the frame."
+    ::= { ieee8023MacEntry 22 }
+
+ieee8023MacLengthErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames received that have length errors."
+    ::= { ieee8023MacEntry 23 }
+
+
+--  The 802.3 Multicast Address Table
+
+ieee8023MacMcaTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF Ieee8023MacMcaEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        "The 802.3 multicast address table."
+    ::= { ieee8023Mac 2 }
+
+ieee8023MacMcaEntry OBJECT-TYPE
+    SYNTAX  Ieee8023MacMcaEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        "Entries in the ieee8023MacMcaTable."
+    INDEX   { ieee8023MacMcaIndex }
+    ::= { ieee8023MacMcaTable 1 }
+
+Ieee8023MacMcaEntry ::=
+    SEQUENCE {
+        ieee8023MacMcaIndex
+            Integer32,
+        ieee8023MacMcaAddress
+            OCTET STRING
+    }
+
+ieee8023MacMcaIndex OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The index corresponding to a particular instance
+         in the ieee8023MacMcaTable."
+    ::= { ieee8023MacMcaEntry 1 }
+
+ieee8023MacMcaAddress OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The multicast address of a particular instance in
+         the ieee8023McaTable."
+    ::= { ieee8023MacMcaEntry 2 }
+
+
+--  Other 802.3 Objects
+
+ieee8023MacState OBJECT-TYPE
+    SYNTAX  INTEGER {
+                offline(1),
+                initializing(2),
+                online(4),
+                error(5),
+                io-not-ready(6)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "A state variable that indicates the current state of the MAC
+         driver."
+    ::= { ieee8023Mac 3 }
+
+ieee8023MacConfigurationStatus OBJECT-TYPE
+    SYNTAX  INTEGER {
+                internal-mau-selected1(1),
+                internal-mau-selected5(5),
+                internal-mau-selected13(13),
+                external-mau-selected(14)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "These are the four bits of hardware power sense and
+         jumper sense registers:
+
+            15  14  13  12  11
+            +---+---+---+---+----------+
+            |apa|mpa|ext|int|  unused  |
+            +---+---+---+---+----------+
+
+            unused    Reserved for future status.
+            apa       12v power detected at the AUI connector.
+            mpa       12v power detected at the Peripheral
+            interface.
+            ext       External AUI connector selected.
+            int       Internal tranceiver selected."
+    ::= { ieee8023Mac 4 }
+
+ieee8023MacNumberActiveMCAs OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of entries in the multicast address table."
+    ::= { ieee8023Mac 5 }
+
+ieee8023MacMauType OBJECT-TYPE
+    SYNTAX  INTEGER {
+           --   unknownOrOther (0), SNMP doesn't accept 0 enumeration
+                aui(1),
+                a10BASE-5(2),
+                foirl(3),
+                a10BASE-2(4),
+                a10BASE-TDuplexModeUnknown(5),
+                a10BASE-FP(6),
+                a10BASE-FB(7),
+                a10BASE-FL-duplex-mode-unknown(8),
+                a10BROAD36(9),
+                a10BASE-T-half-duplex-mode(10),
+                a10BASE-T-full-duplex-mode(11),
+                a10BASE-FL-half-duplex-mode(12),
+                a10BASE-FL-full-duplex-mode(13),
+                a100BASE-T4(14),
+                a100BASE-TX-half-duplex-mode(15),
+                a100BASE-TX-full-duplex-mode(16),
+                a100BASE-FX-half-duplex-mode(17),
+                a100BASE-FX-full-duplex-mode(18),
+                a100BASE-T2-half-duplex-mode(19),
+                a100BASE-T2-full-duplex-mode(20)
+	}
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+       "This object identifies the 10 or 100 Mb/s MAU type.
+        It represents the operational type of the MAU, as
+        determined by (1) auto-negotiation, (2) manual 
+        configuration, or (3) port selection logic."
+    ::= { ieee8023Mac 6 }
+          
+ieee8023MacJackType OBJECT-TYPE
+    SYNTAX  INTEGER {
+                other(1),
+                rj45(2),
+                rj45S(3), -- RJ45 shielded
+                db9(4),
+                bnc(5),
+                faui(6), -- female AUI
+                maui(7), -- male AUI
+                fiberSC(8),
+                fiberMIC(9),
+                fiberST(10),
+                telco(11)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+       "Jack type associated with the selected MAU type."
+    ::= { ieee8023Mac 7 }
+    
+          
+-- .1.3.6.1.4.1.11.2.4.1.8.0
+ieee8023MacMauAutoNegAdminStatus OBJECT-TYPE
+    SYNTAX  INTEGER {
+                enabled(1),
+                disabled(2)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+       "This object indicates whether the interface
+        with auto-negotiation signaling has this
+        ability enabled."
+    ::= { ieee8023Mac 8 }
+                           
+-- the Ieee8025Mac group
+
+ieee8025MacTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF Ieee8025MacEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current
+    DESCRIPTION
+        "A list of ieee8025MacEntry entries."
+    ::= { ieee8025Mac 1 }
+
+ieee8025MacEntry OBJECT-TYPE
+    SYNTAX  Ieee8025MacEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current
+    DESCRIPTION
+        "An entry containing the hp ieee8025 extentions."
+    INDEX   { ieee8025MacIndex }
+    ::= { ieee8025MacTable 1 }
+
+Ieee8025MacEntry ::= SEQUENCE {
+    ieee8025MacIndex
+        Integer32,
+    ieee8025MacTransmitteds
+        Counter32,
+    ieee8025MacUnderflowErrors
+        Counter32,
+    ieee8025MacNoResources
+        Counter32,
+    ieee8025MacFramesReceiveds
+        Counter32,
+    ieee8025MacLineErrors
+        Counter32,
+    ieee8025MacBurstErrors
+        Counter32,
+    ieee8025MacFSSetErrors
+        Counter32,
+    ieee8025MacCongestions
+        Counter32,
+    ieee8025MacLostFrameErrors
+        Counter32,
+    ieee8025MacFrameCopiedErrors
+        Counter32,
+    ieee8025MacTooLongErrors
+        Counter32,
+    ieee8025MacLengthErrors
+        Counter32,
+    ieee8025MacOverflowErrors
+        Counter32,
+    ieee8025MacTokenErrors
+        Counter32
+}
+
+ieee8025MacIndex OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The index value which uniquely identifies the interface/port to
+         which this entry is applicable.  The interface/port identified by
+         a particular value of this index is the same interface/port as
+         identified by the same value of ifIndex."
+    ::= { ieee8025MacEntry 1 }
+
+ieee8025MacTransmitteds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames successfully transmitted."
+    ::= { ieee8025MacEntry 2 }
+
+ieee8025MacUnderflowErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames not transmitted due to
+         underflow errors."
+    ::= { ieee8025MacEntry 3 }
+
+ieee8025MacNoResources OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of frames which were not transmitted
+         due to no outbound resources. "
+    ::= { ieee8025MacEntry 4 }
+
+ieee8025MacFramesReceiveds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Total number of frames received."
+    ::= { ieee8025MacEntry 5 }
+
+ieee8025MacLineErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of received line error frames."
+    ::= { ieee8025MacEntry 6 }
+
+ieee8025MacBurstErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of received burst errors."
+    ::= { ieee8025MacEntry 7 }
+
+ieee8025MacFSSetErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of received FS set errors."
+    ::= { ieee8025MacEntry 8 }
+
+ieee8025MacCongestions OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of received congestion packets."
+    ::= { ieee8025MacEntry 9 }
+
+ieee8025MacLostFrameErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "Number of received lost frame errors."
+    ::= { ieee8025MacEntry 10 }
+
+ieee8025MacFrameCopiedErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of received frame copied errors."
+    ::= { ieee8025MacEntry 11 }
+
+ieee8025MacTooLongErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number received too long errors."
+    ::= { ieee8025MacEntry 12 }
+
+ieee8025MacLengthErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of recevied length errors."
+    ::= { ieee8025MacEntry 13 }
+
+ieee8025MacOverflowErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of received overflow errors."
+    ::= { ieee8025MacEntry 14 }
+
+ieee8025MacTokenErrors OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The number of token errors."
+    ::= { ieee8025MacEntry 15 }
+
+--  The 802.5 Multicast Address Table
+
+ieee8025MacMcaTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF Ieee8025MacMcaEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        "The 802.5 multicast address table."
+    ::= { ieee8025Mac 2 }
+
+ieee8025MacMcaEntry OBJECT-TYPE
+    SYNTAX  Ieee8025MacMcaEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        "Entries in the ieee8025MacMcaTable."
+    INDEX { ieee8025MacMcaIndex }
+    ::= { ieee8025MacMcaTable 1 }
+
+
+Ieee8025MacMcaEntry ::=
+    SEQUENCE {
+        ieee8025MacMcaIndex
+            Integer32,
+        ieee8025MacMcaAddress
+            OCTET STRING
+    }
+
+ieee8025MacMcaIndex OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The index corresponding to a particular instance
+         in the ieee8025MacMcaTable."
+    ::= { ieee8025MacMcaEntry 1 }
+
+ieee8025MacMcaAddress OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The multicast address of a particular instance in
+         the ieee8025McaTable."
+    ::= { ieee8025MacMcaEntry 2 }
+
+--  Other 802.5 Objects
+
+ieee8025MacState OBJECT-TYPE
+    SYNTAX  Integer32
+    --            OFFLINE(1),
+    --            INITIALIZING(2),
+    --            ONLINE(4),
+    --            ERROR(5),
+    --            IO_NOT_READY(6)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "A state variable that indicates the current state of the MAC
+         driver."
+    ::= { ieee8025Mac 3 }
+
+
+ieee8025MacConfigurationStatus OBJECT-TYPE
+    SYNTAX  Integer32
+         --       INTERNAL_MAU_SELECTED1(1),
+         --       INTERNAL_MAU_SELECTED5(5),
+         --       INTERNAL_MAU_SELECTED13(13),
+         --       EXTERNAL_MAU_SELECTED(14)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "These are the four bits of hardware power sense and
+         jumper sense registers:
+
+            15  14  13  12  11
+            +---+---+---+---+----------+
+            |apa|mpa|ext|int|  unused  |
+            +---+---+---+---+----------+
+
+            unused    Reserved for future status.
+            apa       12v power detected at the AUI connector.
+            mpa       12v power detected at the Peripheral
+            interface.
+            ext       External AUI connector selected.
+            int       Internal tranceiver selected."
+    ::= { ieee8025Mac 4 }
+
+ieee8025MacNumberActiveMCAs OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of entries in the multicast address table."
+    ::= { ieee8025Mac 5 }
+    
+-- The HP Network Peripheral Card (npCard) Group
+
+-- The System subgroup of npCard
+
+npSysState OBJECT-TYPE
+    SYNTAX  INTEGER {
+                offline(1),
+                initializing(2),
+                online(4),
+                error(5),
+                io-not-ready(6)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The state of the LAN card to network peripheral
+         interface driver."
+    ::={ npSys 1 }
+
+npSysStatusMessage OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "A status string reflecting the current state of the card
+         and peripheral."
+    ::={ npSys 2 }
+
+npSysPeripheralFatalError OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The most recent peripheral fatal error that is
+         being displayed on the peripheral's display panel.
+         The error typically appears as a '80 Service
+         (00xx)' error.  Refer to peripheral documentation
+         to determine what the error means."
+    ::={ npSys 3 }
+
+npSysCardFatalError OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The most recent LAN Card error that is being
+         displayed on the peripheral's display panel.  The
+         error typically appears as a '80 Service (01xx)'
+         error.  Refer to peripheral documentation to
+         determine what the error means.
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npSys 4 }
+
+npSysMaximumWriteBuffers OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The maximum number of write buffers configured for
+         the LAN card (this translates to the write window
+         size of the connection).
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npSys 5 }
+
+npSysMaximumReadBuffers OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The maximum number of read buffers configured for
+         the LAN card (this translates to the read window
+         size of the connection).
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npSys 6 }
+
+npSysTotalBytesRecvs OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The total number of bytes received since reset."
+    ::={ npSys 7 }
+
+npSysTotalBytesSents OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The total number of bytes sent since reset."
+    ::={ npSys 8 }
+
+npSysCurrReadReq OBJECT-TYPE
+    SYNTAX  Gauge32
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The current number of read data buffers owned by
+         the LAN card.
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npSys 9 }
+
+-- Additions to the npSys tree. (for EX+3)
+
+npSysModelNumber OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(6))
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"The HP model number of the device."
+    ::={ npSys 10 }
+
+npSysNetworkConnectors OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This object describes the network connectors supported by the
+	 device.  The value is a bit mask.  A set bit indicates the
+         connector is supported.
+         Bit      Value     Connector
+          0       0x01      Ethernet, BNC
+          1       0x02      Ethernet, AUI
+          2       0x04      Ethernet, RJ-45
+          3       0x08      TokenRing, DB-9
+          4       0x10      TokenRing, RJ-45
+          5       0x20      LocalTalk
+          6       0x40      100VG, RJ-45
+          7       0x80      100T, RJ-45"
+    ::={ npSys 11 }
+
+
+npSysStatusPageTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF NpSysStatusPageEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+	"A table of all the lines which the card prints on the self-test page."
+    ::={ npSys 12 }
+
+npSysStatusPageEntry OBJECT-TYPE
+    SYNTAX  NpSysStatusPageEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+	"An entry containing one line of the status page."
+    INDEX   { npSysStatusPageIndex }
+    ::={ npSysStatusPageTable 1 }
+
+NpSysStatusPageEntry ::= SEQUENCE {
+    npSysStatusPageIndex
+        Integer32,
+    npSysStatusPageText
+        DisplayString
+}
+
+npSysStatusPageIndex OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"The index value of this entry in the table."
+    ::={ npSysStatusPageEntry 1 }
+
+npSysStatusPageText OBJECT-TYPE
+    SYNTAX  DisplayString 
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"The text of one line of the card status.  This is the same text that
+	 is shown on the printer's selftest page.  The text is localized."
+    ::={ npSysStatusPageEntry 2 }
+
+
+npSysManufactureInfo OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"This object provides information about the hardware that the
+	 firmware is running on as well as manufacturing codes."
+    ::={ npSys 13 }
+
+
+npSysPeekAddress OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+	"This object specifies an address for subsequent peeks."
+    ::={ npSys 14 }
+
+npSysPeek OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"This object specifies an address for subsequent peeks."
+    ::={ npSys 15 }
+           
+npSysCardServices1 OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"This object is a bitmap showing what services are available
+         on the card."
+    ::={ npSys 16 }
+
+npSysCardServices2 OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"This object is a bitmap showing what services are available
+         on the card."
+    ::={ npSys 17 }
+                        
+-- The following 2 objects are from the original Lan Manager MIB.  They
+-- need to exist for backward compatibility.
+
+npCardPFatalErr OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The most recent peripheral fatal error that is
+         being displayed on the peripheral's display panel.
+         The error typically appears as a '80 Service
+         (00xx)' error.  Refer to peripheral documentation
+         to determine what the error means."
+    ::={ npCard 2 }
+
+npCardIoFatalErr OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The most recent LAN Card error that is being
+         displayed on the peripheral's display panel.  The
+         error typically appears as a '80 Service (01xx)'
+         error.  Refer to peripheral documentation to
+         determine what the error means.
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npCard 3 } 
+    
+--- The Card Connection Statistics subgroup of npCard
+
+npConnsAccepts OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of connections accepted since reset."
+    ::={ npConns 1 }
+
+npConnsRefuseds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of connections refused since reset.  Connections
+         are refused for the following reasons: a connection is already
+         active, the peripheral is offline, the network peripheral
+         interface is not ready for connections after a power-up or
+         reset, or there isn't enough buffer space on the card to
+         establish a connection."
+    ::={ npConns 2 }
+
+npConnsDenys OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of connections that the card denied due to failure
+         to match the access list."
+    ::={ npConns 3 }
+
+npConnsDenysIP OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The IP address of the last node to be denied a connection
+         due to failure to match the access list."
+    ::={ npConns 4 }
+
+npConnsAborts OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of connections aborted due to a network problem."
+    ::={ npConns 5 }
+
+npConnsAbortReason OBJECT-TYPE
+    SYNTAX  DisplayString
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The textual description of why the last abort on the
+         card occurred."
+    ::={ npConns 6 }
+
+npConnsAbortIP OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The IP address of the last node to establish a connection
+         before the card aborted."
+    ::={ npConns 7 }
+
+npConnsAbortPort OBJECT-TYPE
+    SYNTAX  Integer32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The port of the last node to establish a connection
+         before the card aborted."
+    ::={ npConns 8 }
+
+npConnsAbortTime OBJECT-TYPE
+    SYNTAX  TimeTicks
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The time (in hundredths of a second) since the last
+         time the card was aborted."
+    ::={ npConns 9 }
+
+npConnsState OBJECT-TYPE
+    SYNTAX  INTEGER {
+                up(1),
+                down(2)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "State of current connection to card."
+    ::={ npConns 10 }
+
+npConnsIP OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "Remote IP address of the node currently connected to the card.
+         Zero if no connection is active."
+    ::={ npConns 11 }
+
+npConnsPort OBJECT-TYPE
+    SYNTAX  Integer32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "Remote port number of the node currently connected to the card.
+         Zero if no connection is active."
+    ::={ npConns 12 }
+
+npConnsPeriphClose OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of connections closed in response to a peripheral
+         request I/O channel reset request."
+    ::={ npConns 13 }
+
+npConnsIdleTimeouts OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of connections closed due to an idle timeout."
+    ::={ npConns 14 }
+
+npConnsNmClose OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of connections closed by SetRequests to the MIB
+         variable, npCtlCloseConnection."
+    ::={ npConns 15 }
+
+npConnsBytesRecvds OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of bytes received by this connection."
+    ::={ npConns 16 }
+
+npConnsBytesSents OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of bytes transmitted by this connection."
+    ::={ npConns 17 }
+
+--- The Card Configuration subgroup of npCard
+
+npCfgSource OBJECT-TYPE
+    SYNTAX  INTEGER {
+--          bootp (0),          historical only
+            manual-one (1),     -- read-only, depreciate after intro of box products. 
+            bootp-two (2),      -- read-only, depreciate after intro of box products.
+            manual-three (3),   -- read/write, must write ip_addr in same packet.
+            bootp-four (4),     -- read/write, ignores other npCfg if in same packet.
+            dhcp (5),           -- read/write, ignores other npCfg if in same packet.
+            not-configured (6), -- read-only
+            default-config (7), -- read-only
+            rarp (8)            -- read-only
+            }
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "This object indicates how the device obtained its IP configuration."
+    ::={ npCfg 1 }
+
+npCfgYiaddr OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "The IP address assigned to the card from the BOOTP reply
+         yiaddr field."
+    ::={ npCfg 2 }
+
+npCfgSiaddr OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The IP address of the TFTP server from the BOOTP reply
+         siaddr field."
+    ::={ npCfg 3 }
+
+npCfgGiaddr OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The IP address of the TFTP gateway from the BOOTP reply
+         giaddr field."
+    ::={ npCfg 4 }
+
+npCfgLogServer OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+	 "The IP address of the Syslog Server. If set via BOOTP (Tag: 7 field,
+         lg= ) then SNMP set will fail. If not set via BOOTP then SNMP set
+         will succeed. Value saved across warm boot power cycles. BOOTP will always
+         overwrite SNMP set values."
+    ::={ npCfg 5 }
+
+npCfgSyslogFacility OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This specifies the facility identifier used in syslog messages
+         generated by the card."
+    ::={ npCfg 6 }
+
+npCfgAccessState OBJECT-TYPE
+    SYNTAX  INTEGER {
+                allowed (1),
+                not-allowed (2)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "An indication of whether or not the requesting host
+         is allowed to connect to the card as dictated by the
+         access list."
+    ::={ npCfg 7 }
+
+npCfgAccessListNum OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of access list entries."
+    ::={ npCfg 8 }
+
+npCfgAccessListTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF NpCfgAccessListEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        "List of access addresses and masks."
+    ::={ npCfg 9 }
+
+npCfgAccessListEntry OBJECT-TYPE
+    SYNTAX  NpCfgAccessListEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        "Each entry contains an access address and mask."
+    INDEX    { npCfgAccessListIndex }
+    ::={ npCfgAccessListTable 1 }
+
+NpCfgAccessListEntry ::=
+    SEQUENCE {
+        npCfgAccessListIndex
+            Integer32,
+        npCfgAccessListAddress
+            IpAddress,
+        npCfgAccessListAddrMask
+            IpAddress
+    }
+
+npCfgAccessListIndex OBJECT-TYPE
+    SYNTAX  Integer32 (0..9)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "Index to the configuration access list table."
+    ::={ npCfgAccessListEntry 1 }
+
+npCfgAccessListAddress OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "Address to compare with after applying the wildcard to
+         the requestor's address."
+    ::={ npCfgAccessListEntry 2 }
+
+npCfgAccessListAddrMask OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "Address mask used to help determine whether or not a given
+         IP address is allowed access to the card.  An IP address is
+         allowed access if (Addr & AddrMask) == (IP & AddrMask)."
+    ::={ npCfgAccessListEntry 3 }
+
+npCfgIdleTimeout OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "The idle timeout is the length in seconds after which an
+         idle connection is terminated.  A value of zero disables
+         the timeout. Valid time values range from 1 to 3600."
+    ::={ npCfg 10 }
+
+npCfgTcpMss OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-write
+	STATUS current --	
+	DESCRIPTION
+	"Enumerate as follows:
+	0 = treat all hosts as local which means JetDirect sends a maximum of
+	    1460 bytes of data in all outbound packets.
+	1 = treat hosts on different subnets but in the same network as local
+	    which means for hosts in the same network, send 1460 bytes; else send 536 
+	    bytes in outbound packets.
+	2 = treat only hosts on the same network and same subnet as local (use
+	    1460 bytes); otherwise treat them as remote hosts (send 536 bytes)." 
+  ::={ npCfg 11 }
+
+
+npCfgSubnetMask OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS      read-write
+    STATUS      current --
+    DESCRIPTION
+        "The subnet mask associated with the IP address of this card."
+    ::= { npCfg 12}
+
+npCfgDefaultGateway     OBJECT-TYPE
+    SYNTAX      IpAddress
+    MAX-ACCESS      read-write
+    STATUS      current --
+    DESCRIPTION
+        "This variable contains the IP address of the default router for this
+         card."
+    ::= { npCfg 13}
+
+npCfgRootURL    OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  read-write
+    STATUS      obsolete --
+    DESCRIPTION
+        "The HTTP root(/) directory redirect location."
+   ::= { npCfg 14}
+
+npCfgGenURL     OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  read-write
+   STATUS      obsolete --
+    DESCRIPTION
+        "The HTTP /redirect directory location."
+    ::= { npCfg 15}
+
+npCfgDomainName     OBJECT-TYPE
+    SYNTAX          OCTET STRING
+    MAX-ACCESS      read-write
+    STATUS          obsolete --
+    DESCRIPTION
+        "The JetDirect domain name as configured by Web JetAdmin."
+    ::= { npCfg 16}
+
+npCfgSlpTtl OBJECT-TYPE
+  SYNTAX Integer32
+  MAX-ACCESS read-write
+  STATUS current --
+  DESCRIPTION
+    "The TTL value is used in the IP header of SLP multicast 
+     pkts sent by JetDirect. "
+  ::= { npCfg 17 }
+
+npCfgIPP OBJECT-TYPE
+  SYNTAX Integer32
+  MAX-ACCESS read-write
+  STATUS current --
+  DESCRIPTION
+    "The value can be 0, meaning IPP has been disabled, 
+     or 1, meaning IPP has been enabled."
+  ::= { npCfg 18 }
+
+npCfgMailServerUrl OBJECT-TYPE
+  SYNTAX DisplayString
+  MAX-ACCESS read-write
+  STATUS current
+  DESCRIPTION
+     "The mail server to which messages originating
+     from the JetDirect should be sent. The value
+     is a URL in the form:
+
+        protocol://address:port
+
+     The protocol and port fields are optional.
+     The default protocol is 'smtp' and the default
+     port is '25'. The address field may be an IP
+     address in dot notation or a DNS name.
+     Examples:
+
+        smtp://156.153.255.242:25
+        smtp://parrel1.hp.com
+        156.153.255.242:25
+        palrel1.hp.com"
+  ::= { npCfg 19 }
+
+
+-- The TCP subgroup of npCard
+
+npTcpInSegInOrders OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of TCP segments received in order."
+    ::={ npTcp 1 }
+
+npTcpInSegOutOfOrders OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of TCP segments received out of order."
+    ::={ npTcp 2 }
+
+npTcpInSegZeroProbes OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of TCP zero window probes received."
+    ::={ npTcp 3 }
+
+npTcpInDiscards OBJECT-TYPE
+    SYNTAX  Counter32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of TCP segments received that were
+         discarded."
+    ::={ npTcp 4 }
+
+-- The Card Control subgroup of npCard
+
+npCtlReconfigIP OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The IP address of the last node to request a reconfig
+         of the card.  This value is preserved across a reconfig."
+    ::={ npCtl 1 }
+
+npCtlReconfigPort OBJECT-TYPE
+    SYNTAX  Integer32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The port of the last node to request a reconfig of the
+         card.  This value is preserved across a reconfig."
+    ::={ npCtl 2 }
+
+npCtlReconfigTime OBJECT-TYPE
+    SYNTAX  TimeTicks
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The time (in hundredths of a second) since the last
+         time the card was reconfigured."
+    ::={ npCtl 3 }
+
+npCtlCloseIP OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The IP address of the last node to request a close of
+         the peripheral data connection on the card.  This
+         value is cleared on a reconfig."
+    ::={ npCtl 4 }
+
+npCtlClosePort OBJECT-TYPE
+    SYNTAX  Integer32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The port of the last node to request a close of the
+         peripheral data connection on the card.  This
+         value is cleared on a reconfig."
+    ::={ npCtl 5 }
+
+npCtlImageDump OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  obsolete --
+    DESCRIPTION
+        "Writing a one (1) to this variable causes the card to dump
+         its RAM image into a file using TFTP.  The file is dumped
+         onto the BOOTP server machine whose IP address is in the MIB
+         variable, npCfgSiaddr { npCfg 3 }.  The file name is:
+         npi. in the tftp directory, where  is the
+         IP address of the card.  The file must be writable by TFTP.
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::= { npCtl 6 }
+
+npCtlCloseConnection OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Writing a one (1) to this variable causes the card to close
+         the current peripheral data connection"
+    ::= { npCtl 7 }
+
+npCtlReconfig OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Writing any value to this variable causes the card to
+         reconfigure itself by doing the BOOTP/TFTP configuration
+         activity."
+    ::= { npCtl 8 }
+
+npCtlProtocolSet OBJECT-TYPE
+    SYNTAX  Integer32 
+--                disable-None (2852126750), 
+--                disable-Apple(2852126734),
+--                disable-LLC (2852126746),
+--                disable-Novell (2852126748),
+--                disable-Novell-LLC (2852126744),
+--                disable-Novell-LLC-Apple (2852126728),
+--                disable-Novell-Apple (2852126732),
+--                disable-Apple-LLC (2852126730),
+--                disable-TCP (2852126742)
+--    	    } 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This is a 4 byte integer value.  The least significant bytes
+         represent the protocols on the card.  A value of '1' indicates
+         a protocol that is enabled.  A value of '0' indicates a
+         protocol that is disabled.  
+         The 32-bit protocol enable 'structure' is defined as:
+
+    		bits 31-28:  Number of I/O channels/protocols present (NUM_CHAN)
+    		bits 27-24:  Number of I/O channels which may operate concurrently
+                    (NUM_OP_CHAN)
+    		bits 23-16:  unused, reserved
+    		bits 15-1:   Individual I/O channel/protocol enable bits,
+                    0 == disable, 1 == enable
+                    MIO_IOCHAN_NOVELL   bit   1
+                    MIO_IOCHAN_LLC      bit   2
+                    MIO_IOCHAN_TCP      bit   3
+                    MIO_IOCHAN_ATALK    bit   4
+    		bit  0:      When NUM_OP_CHAN == 1, auto-protocol select enable bit,
+                    0 == disable, 1 == enable  (APS_ON)"
+    ::={ npCtl 9 }
+
+
+npCtlStatusPageLang OBJECT-TYPE
+    SYNTAX  INTEGER {
+                pcl(1),
+                ascii(2),
+                postscript(3),
+                hpgl(4)
+            }
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This object specifies the PDL used to print the status page.
+        	EX ONLY"
+    ::= { npCtl 10 }
+
+npCtlPrintStatusPage OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Writing any value to this object causes the device to print
+	 a status page. EX ONLY"
+    ::= { npCtl 11 }
+
+
+npCtlErrorBehavior OBJECT-TYPE
+    SYNTAX  INTEGER { 
+--              not-supported-on-this-platform (0),  mib compiler will not take zero
+                dump-then-reboot(1),
+                reboot-without-dump(2),
+                dump-then-halt(3),
+                halt-without-dump(4),      
+                full-dump-then-reboot(5),
+                full-dump-then-halt(6),
+            }
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This object provides management capability to specify
+         various error/panic/reset modes as are enumerated above.
+         Default is halt_without-dump(4)."
+    ::= { npCtl 12 }
+
+npCtlCrcControl OBJECT-TYPE
+    SYNTAX  INTEGER {
+    --          off (0),  mib compiler will not take zero
+                on (1)
+            }
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This object controls and manages the collection of crc data  
+         for paperless print testing."
+    ::= { npCtl 13 }
+    
+npCtlSNMPEnableDisable OBJECT-TYPE
+    SYNTAX Integer32 
+    MAX-ACCESS read-write
+    STATUS current --
+    DESCRIPTION
+       "0 - disable SNMP
+       Disable the SNMP protocol on the JetDirect device.
+       Once SNMP is disabled it will not be
+       possible to enable SNMP via another SNMP request, or 
+       enabled while this object is already enabled.
+       SNMP may be enabled via a different user interface,
+       such as telnet."
+    ::= { npCtl 14 }
+
+npCtlStatusPageLangMask OBJECT-TYPE
+    SYNTAX  INTEGER {
+                pcl (1),
+                ascii (2),
+		pcl-ascii (3),
+                postscript (4),
+		pcl-postscript (5),
+		ascii-postscript (6),
+		pcl-ascii-postscript (7),
+                hpgl2 (8),
+                pcl-hpgl2 (9),
+                ascii-hpgl2 (10),
+		pcl-ascii-hpgl2 (11),
+                postscript-hpgl2 (12),
+		pcl-postscript-hpgl2 (13),
+		ascii-postscript-hpgl2 (14),
+                all (15)
+            }
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+      "This object specifies the Page Description 
+       Language (PDL) used to print the status page. 
+       It is a bit mask as follows:
+
+          pcl        =  1
+          ascii      =  2
+          postscript =  4
+          hpgl2      =  8
+          all        = 15
+
+       Although the user may select a specific PDL it doesn't 
+       guarantee that the status page will actually be
+       printed as selected, as the actual PDL used depends 
+       on the PDL capability of the printer. PDL values 
+       may also be set via npCtlStatusPageLang, by telnet, 
+       by the embedded web server on the JetDirect device, 
+       by the front panel of some printers, or by using
+       the select button on the EX box. PDL values set via
+       these alternate methods will be reflected by this object
+       upon a read. 
+
+       This object is intended as an eventual replacement for 
+       npCtlStatusPageLang." 
+    ::= { npCtl 15 }
+
+npCtlBpDisableLCB OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This object will disable (0) or enable (1) LCB (Logical Channel Break)."
+    ::={ npCtl 16 }
+    
+
+npCtlTknobCommandRequest OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..128))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "A tuning knob command is processed when
+         this object is set with specific requests.
+         Any response from the tuning knob command
+         is made available via npCtlTknobCommandResponse."
+    ::={ npCtl 17 }
+
+npCtlTknobCommandResponse OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..128))
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "A tuning knob command is processed when
+         npCtlTknobCommandRequest is set with specific requests.
+         Any response from the tuning knob command
+         is made available via this object."
+    ::={ npCtl 18 }
+
+
+ 
+-- The HP Modular Input/Output (MIO) subgroup of npCard
+-- The Card Status Entry
+
+npNpiCseDataState OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The data state of the LAN card.
+	
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardStatusEntry 1 }
+
+npNpiCseErrorCode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The LAN card's error code.
+	
+	Starting with firmware release X.20.06 and subsequent
+        releases, this object is obsolete as it provides no
+        relevant data for the new hardware architecture.
+        No current supported applications use this object."
+    ::={ npNpiCardStatusEntry 2 }
+
+npNpiCseLinkEvent OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The LAN link event (reset or initialized or
+         triggered).
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardStatusEntry 3 }
+
+npNpiCseReadMode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The state of the LAN card's read channel (operate
+         or idle).
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardStatusEntry 4 }
+
+npNpiCseWriteMode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The state of the LAN card's write channel (operate
+         or idle).
+	          
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardStatusEntry 5 }
+
+npNpiCseWarningCode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the LAN card channel zero
+         has encountered an error condition which isn't 
+         serious enough to shut the peripheral down, 
+         but should be checked out."
+    ::={ npNpiCardStatusEntry 6 }
+
+npNpiCseConnectionState OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "Indicates whether or not the peripheral is
+         currently connected to a server.
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardStatusEntry 7 }
+
+npNpiCseNovWarningCode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the Novell stack has encountered
+         an error condition which isn't serious enough to
+         shut the peripheral down, but should be checked
+         out."
+    ::={ npNpiCardStatusEntry 8 }
+
+npNpiCseLlcWarningCode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the LLC stack has encountered
+         an error condition which isn't serious enough to
+         shut the peripheral down, but should be checked
+         out."
+    ::={ npNpiCardStatusEntry 9 }
+
+npNpiCseTcpWarningCode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the TCP stack has encountered
+         an error condition which isn't serious enough to
+         shut the peripheral down, but should be checked
+         out."
+    ::={ npNpiCardStatusEntry 10 }
+
+npNpiCseAtkWarningCode OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This indicates that the AppleTalk stack has encountered
+         an error condition which isn't serious enough to
+         shut the peripheral down, but should be checked
+         out."
+    ::={ npNpiCardStatusEntry 11 }
+
+--  The Peripheral Attribute Entry
+
+npNpiPeripheralAttributeCount OBJECT-TYPE
+    SYNTAX  Integer32 (0..32)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of valid bytes of peripheral attributes
+         received from the peripheral."
+    ::={ npNpi 2 }
+
+npNpiPaeLinkDirection OBJECT-TYPE
+    SYNTAX  INTEGER 
+--              NO-PERIPH-DATA-XFER (0),
+--              XFER-PERIPH-TO-HOST (1),
+--              XFER-HOST-TO-PERIPH (2),
+--              BI-DIRECT-PERIPH-DATA-XFER (3)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The directions that the peripheral is able to
+         transfer data (read and write channels, read
+         channel only, or write channel only).
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiPeripheralAttributeEntry 1 }
+
+npNpiPaeClass OBJECT-TYPE
+    SYNTAX  INTEGER {
+--            	undefined-Class (0),
+              	printer(1),
+              	plotter(2),
+              	xStation(3)
+             }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The class assigned to the peripheral onto which
+         this card is plugged."
+    ::={ npNpiPeripheralAttributeEntry 2 }
+
+npNpiPaeIdentification OBJECT-TYPE
+    SYNTAX  INTEGER { 
+--              undefined-Periph (0),
+              	laserjet-IIISI (1),
+              	laserjet-4SI (5)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The Identification number of the peripheral.  These values are
+         defined in the MIO spec.  DesignJet, PaintJet XL300, and 
+         DesignJet/600 peripherals will identify themselves as 
+         LaserJet-IIIsi."
+    ::={ npNpiPeripheralAttributeEntry 3 }
+
+npNpiPaeRevision OBJECT-TYPE
+    SYNTAX  INTEGER (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The revision number of the peripheral.
+	
+	Starting with firmware release X.20.06 and subsequent
+        releases, this object is obsolete as it provides no
+        relevant data for the new hardware architecture.
+        No current supported applications use this object."
+    ::={ npNpiPeripheralAttributeEntry 4 }
+
+npNpiPaeAppleTalk OBJECT-TYPE
+    SYNTAX  INTEGER {
+--              no-APPLETALK-SUPPORT (0),
+                appletalk-SUPPORT (1)
+              		}
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "Indicates the peripheral supports functionality
+         that the apple talk protocol network provides."
+    ::={ npNpiPeripheralAttributeEntry 5 }
+
+npNpiPaeMessage OBJECT-TYPE
+    SYNTAX  INTEGER 
+--              no-MSGMODE-SUPPORT (0),
+--              mSGMODE-SUPPORT(1)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "Reserved for future use.
+	
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiPeripheralAttributeEntry 6 }
+
+npNpiPaeReserved OBJECT-TYPE
+    SYNTAX  INTEGER 
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "This field is an unused byte.
+	
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiPeripheralAttributeEntry 7 }
+
+npNpiPaeMultichanFlag OBJECT-TYPE
+    SYNTAX  INTEGER (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "An indication of how many MIO channels the peripheral supports."
+    ::={ npNpiPeripheralAttributeEntry 8 }
+
+npNpiPaeDatagramFlag OBJECT-TYPE
+    SYNTAX  INTEGER (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "An indication of how many MIO datagram channels the peripheral 
+         supports."
+    ::={ npNpiPeripheralAttributeEntry 9 }
+
+
+--  The Card Attribute Entry
+
+npNpiCaeLinkDirection OBJECT-TYPE
+    SYNTAX  INTEGER 
+--              NO-LINK-DATA-XFER (0),
+--              XFER-LINK-TO-HOST (1),
+--              XFER-HOST-TO-LINK (2),
+--              BI-DIRECT-LINK-DATA-XFER(3)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The directions that this particular network
+         peripheral card is able to transfer data (read and
+         write, read only or write only).
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardAttributeEntry 1 }
+
+npNpiCaeClass OBJECT-TYPE
+    SYNTAX  INTEGER { 
+--              undefined-Class (0),
+                rs-232 (1),
+                centronics (2),
+                csma-cd-network (3),
+                token-ring-network (4),
+                scsi (5),
+                hpib (6),
+                localtalk (7)
+              		}
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The class of this network peripheral card."
+    ::={ npNpiCardAttributeEntry 2 }
+
+npNpiCaeIdentification OBJECT-TYPE
+    SYNTAX  INTEGER (0..65535)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The identification number assigned this network
+         peripheral card."
+    ::={ npNpiCardAttributeEntry 3 }
+
+npNpiCaeRevision OBJECT-TYPE
+    SYNTAX  INTEGER (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The revision number of the network peripheral
+         connection card code on this card.
+	 
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardAttributeEntry 4 }
+
+npNpiCaeAppleTalk OBJECT-TYPE
+    SYNTAX  INTEGER { 
+--            no-APPLETALK-SUPPORT (0),
+              appletalk-SUPPORT (1)
+              		}
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "Indicates that the card supports the apple talk
+         protocol network."
+    ::={ npNpiCardAttributeEntry 5 }
+
+npNpiCaeMessage OBJECT-TYPE
+    SYNTAX  INTEGER 
+--              NO-MSGMODE-SUPPORT (0),
+--              MSGMODE-SUPPORT(1)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "Indicates that the card supports the messaging mode protocol.
+	
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardAttributeEntry 6 }
+
+npNpiCaeReserved OBJECT-TYPE
+    SYNTAX  INTEGER 
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "Reserved object for future use.
+	
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardAttributeEntry 7 }
+
+npNpiCaeMultichan OBJECT-TYPE
+    SYNTAX  INTEGER 
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "An indication of how many MIO channels the I/O card supports.
+	
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardAttributeEntry 8 }
+
+npNpiCaeDatagram OBJECT-TYPE
+    SYNTAX  INTEGER (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "An indication of how many MIO datagram channels the I/O 
+         card supports.
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npNpiCardAttributeEntry 9 }
+
+--  The Error Log Table subgroup of npCard
+
+npEltErrorLogTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF NpEltErrorLogEntry
+    MAX-ACCESS  not-accessible
+    STATUS  obsolete --
+    DESCRIPTION
+       "The LAN card's error log."
+    ::={ npElt 1 }
+
+npEltErrorLogEntry OBJECT-TYPE
+    SYNTAX  NpEltErrorLogEntry
+    MAX-ACCESS  not-accessible
+    STATUS  obsolete --
+    DESCRIPTION
+        "The LAN card's error log table entries."
+    INDEX { npEltErrIndex }
+    ::={ npEltErrorLogTable 1 }
+
+
+NpEltErrorLogEntry ::=
+    SEQUENCE {
+        npEltErrIndex
+            Integer32,
+        npEltErrErrorId
+            Integer32,
+        npEltErrErrorParam
+            Unsigned32,
+       npEltErrTimeStamp
+            TimeTicks
+    }
+
+npEltErrIndex OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "The index that uniquely identifies an error log
+         entry.
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npEltErrorLogEntry 1 }
+
+npEltErrErrorId OBJECT-TYPE
+    SYNTAX  Integer32 (0..65535)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "Identification for this error.
+	
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+   ::={ npEltErrorLogEntry 2 }
+
+npEltErrErrorParam OBJECT-TYPE
+    SYNTAX  Unsigned32 (0..4294967295)
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "Error Parameter value.
+	
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npEltErrorLogEntry 3 }
+
+npEltErrTimeStamp OBJECT-TYPE
+    SYNTAX  TimeTicks
+    MAX-ACCESS  read-only
+    STATUS  obsolete --
+    DESCRIPTION
+        "Time in timer ticks when error log entry was made.
+	
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::={ npEltErrorLogEntry 4 }
+
+--  The IPX group
+
+npIpxGetUnitCfgResp OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This object is the Get Unit Config Response
+         structure described in the IPX code.  This
+         structure is of variable length depending
+         on how many servers are configured."
+    ::={ npIpx 1 }
+
+npIpx8022frametype OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of IPX FT8022 frames received."
+    ::={ npIpx 2 }
+
+npIpxSNAPframetype OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of IPX FTSNAP frames received."
+    ::={ npIpx 3 }
+
+npIpxEthernetframetype OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of IPX FTEthernet frames received."
+    ::={ npIpx 4 }
+
+npIpx8023Rawframetype OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of IPX FT8023RAW frames received."
+    ::={ npIpx 5 }
+
+npIpxSapInfo OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is a 50 byte array that contains the following
+         information.
+           2 bytes:  bindery object type (always 030c in hi-lo order)
+          12 bytes:  Mac address of card (ASCII)
+           2 bytes:  frame type
+                     also high bit (8000) is set if card is not configured
+           2 bytes : unit type (hex 81 for NetJet card)
+           32 bytes: node name (ASCII) which is:
+                     print server name for Queue Server mode
+                     printer name for RPTR mode"
+    ::={ npIpx 6 }
+
+npIpxGetUnitCfgResp2 OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This object is the Get Unit Config Response
+         structure described in the IPX code.  This
+         structure is of variable length depending
+         on how many servers are configured.  This is
+         the second set of info when more than
+         8 print servers are configured."
+    ::={ npIpx 7 }
+
+-- Additions to the npIpx tree.  
+-- These will not appear in the code until NDS is merged (not in EX+3).
+
+npIpxUnitName OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..29))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This is the name by which the device advertises over NetWare.  In
+	 remote printer mode, this is referred to as the node name.  In
+	 queue server mode this name doubles as the print server name used
+	 to log into a file server (in bindery mode).
+
+	 This value is settable.  If a string that is longer than the
+	 maximum length is sent, the value will be truncated to the max.
+	 The max size does not include a null-terminating octet, nor does
+	 the string include a null octet.
+
+	 Setting this value to a zero length string or a single null
+	 character will cause the card to reset to factory defaults in the
+	 Novell mode only.  Returning the node name to the NPIxxxxxx
+	 standard, resetting all options, and returning all slots to
+	 unconfigured.
+
+	 Any sets to this object will cause the card to reset, dropping all
+	 connections immediately (even in the middle of a job).  This reset
+	 will occur even if the name sent is identical to the prior name."
+    ::={ npIpx 8 }
+
+npIpxNdsTreeName OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..32))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+	"This is the name of the NDS tree by which the JetDirect attempts
+	 to connect and authenticate.  NDS support is enabled when this
+	 value is provided (although connections do not become initiated
+	 until ipxUnitName is reset).
+
+	 To deconfigure the NDS support it is necessary to remove this tree
+	 name by setting the value to a zero length octet string or setting
+	 it to a single null character."
+    ::={ npIpx 9 }
+
+
+npIpxNdsFullyQualifiedName1 OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(6..260))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+	"The length and the first 128 characters of the NDS fully qualified
+	 print server name.  "
+    ::={ npIpxNdsFullyQualifiedName 1 }
+
+npIpxNdsFullyQualifiedName2 OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..258))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+	"The rest of the NDS fully qualified print server name.  This is
+	 the continuation of npIpxNdsFullyQualifiedName1 for names longer
+	 than 128 characters.  The value will be an empty string if the
+	 name is less than 128 characters long."
+    ::={ npIpxNdsFullyQualifiedName 2 }
+
+
+npIpxServerConnTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF NpIpxServerConnEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        "A list of npIpxServerConn entries."
+    ::= { npIpx 11 }
+
+
+npIpxObsoleteServerConnInfo1 OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(448))
+    MAX-ACCESS  read-only
+    STATUS  deprecated
+    DESCRIPTION
+	"This object contains a list of 8 structures that refer to the
+	 status of the first eight file server connection slot entries.
+	 Each entry indicates the file server dynamically connected in the
+	 given slot.  Besides the name of the file server, connection
+	 status, NCP status, and NDS status is provided.
+
+	 If the file server name in a given slot has '\0' in the first
+	 byte, that slot is not in use.
+
+	 The structure applied:
+	      struct {
+		  uchar   opMode;     // Operating mode of server
+				      // 0x00 = QServer (bindery)
+				      // 0x01 = RPrinter
+				      // 0x03 = QServer (nds)
+		  char    fsName[48]; // name of file server in slot
+		  uchar   connStat;   // RCFG connection status
+		  uchar   ncpStat;    // last NCP code
+	          uchar   pad;
+		  uint32  ndsStat;    // last NDS code (big-endian)
+              } slots[8];"
+    ::={ npIpxObsoleteServerConnInfo 1 }
+
+npIpxObsoleteServerConnInfo2 OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(448))
+    MAX-ACCESS  read-only
+    STATUS  deprecated
+    DESCRIPTION
+	"The server connection info for slots 9-16.  See above for format."
+    ::={ npIpxObsoleteServerConnInfo 2 }
+
+
+npIpxServerConnEntry OBJECT-TYPE
+    SYNTAX  NpIpxServerConnEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+	"An entry contains the status of a file server connection.  Each
+	 entry indicates the file server dynamically connected in the given
+	 slot, the connection status, NCP status, and NDS status.
+
+   To set a new serverConnTable entry perform an snmpset of the serverConn name
+   including only the column.  The row will be returned.  
+
+   IpxUnitName {.1.3.6.1.4.1.11.2.4.3.10.8.0} is used to synchronize novell
+   stack operation when multiple connTable entries are required.
+    
+   Normally, all connTable entries are first set, and then
+   IpxUnitName is set.  This triggers novell stack to reconfigure to use the
+   the new connTable entries.
+ 
+   New connTable entries are retrievable with get/getnext only after
+   setting of the ipxUnixName.
+
+  examples:
+    To set connTable entry:
+      $  snmpset -cinternal 15.29.43.73 .1.3.6.1.4.1.11.2.4.3.10.11.1.3 
+octetstring server1
+        .1.3.6.1.4.1.11.2.4.3.10.11.1.3.2 : OCTET STRING- (ascii):      server1
+ 
+      $  snmpset -cinternal 15.29.43.73 .1.3.6.1.4.1.11.2.4.3.10.11.1.3 
+octetstring server2
+       .1.3.6.1.4.1.11.2.4.3.10.11.1.3.2 : OCTET STRING- (ascii):      server2
+ 
+   To set ipxUnitName:
+      $  snmpset -cinternal 15.29.43.73 .1.3.6.1.4.1.11.2.4.3.10.8.0 octetstring 
+UNIT_A
+            .1.3.6.1.4.1.11.2.4.3.10.8.0 : OCTET STRING- (ascii):   UNIT_A
+ 
+   To walk connTable:
+      $ snmpwalk 15.29.43.73 .1.3.6.1.4.1.11.2.4.3.10.11
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.1.1 : Integer32: 1
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.2.1 : Integer32: 2
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.3.1 : OCTET STRING- (ascii):      
+server1
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.4.1 : Integer32: 4
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.5.1 : Integer32: 0
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.6.1 : Integer32: 0
+ 
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.1.2 : Integer32: 2
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.2.2 : Integer32: 2
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.3.2 : OCTET STRING- (ascii):      
+server2
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.4.2 : Integer32: 1
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.5.2 : Integer32: 0
+           .1.3.6.1.4.1.11.2.4.3.10.11.1.6.2 : Integer32: 0
+    "
+
+    INDEX   { npIpxServerConnIndex }
+    ::= { npIpxServerConnTable 1 }
+
+NpIpxServerConnEntry ::= SEQUENCE {
+    npIpxServerConnIndex
+        Integer32,
+    npIpxServerConnMode
+	     INTEGER,
+    npIpxServerConnName
+        OCTET STRING,
+    npIpxServerConnStatus
+        Integer32,
+    npIpxServerConnNcpStatus
+        Integer32,
+    npIpxServerConnNdsStatus
+        Integer32
+}
+
+npIpxServerConnIndex OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The index value which uniquely identifies the server connection to
+         which this entry is applicable."
+    ::= { npIpxServerConnEntry 1 }
+
+npIpxServerConnMode OBJECT-TYPE
+    SYNTAX  INTEGER {
+		not-connected(1),
+                qserver-bindery(2),
+                rprinter(3),
+                qserver-nds(4)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The operating mode of the server."
+    ::= { npIpxServerConnEntry 2 }
+
+npIpxServerConnName OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(0..48))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "The name of the server."
+    ::= { npIpxServerConnEntry 3 }
+
+npIpxServerConnStatus OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The RCFG connection status of the server."
+    ::= { npIpxServerConnEntry 4 }
+
+npIpxServerConnNcpStatus OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The last NCP code of the server."
+    ::= { npIpxServerConnEntry 5 }
+
+npIpxServerConnNdsStatus OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The last NDS code of the server."
+    ::= { npIpxServerConnEntry 6 }
+
+
+-- The following is not an NDS related object (will be in EX+3)
+
+npIpxRcfgAddress OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(12))
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"The 12 octet IPX address of the Novell RCFG socket.  The address
+	 is in network byte order."
+    ::={ npIpx 13 }
+
+npIpxRcfgRemotePrintServerName OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(12))
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "Remote print server name. "
+    ::={ npIpx 14 }
+
+npIpxRcfgRemotePrinterNumber OBJECT-TYPE
+    SYNTAX Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "remote Printer Number (valid in remote Printer Mode only)
+     range: 0-255 for 4.X servers
+            0-15 for 3.X servers  "
+    ::={ npIpx 15 }
+
+npIpxRestart OBJECT-TYPE
+    SYNTAX Integer32  
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "Setting of this object to zero causes a soft reset of the board,
+     setting to one causes a hard reset of the board. "
+    ::={ npIpx 16 }
+
+npIpxSourceRoute OBJECT-TYPE
+    SYNTAX Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "This object provides control/status for source route. Options
+     for Token Ring networks are as follows:
+     
+     00 - Auto Sensing mode
+     01 - Send without SR, receive only if same ring
+     02 - Send with SR, single route
+     03 - Send with SR, all routes used receive any "
+
+    ::={ npIpx 17 }
+
+npIpxFrameType OBJECT-TYPE
+    SYNTAX Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "This object returns the frame type current enabled,
+     possibilities are as follows:
+
+     00 - Auto
+     01 - Ethernet 8023 or Token-ring
+     02 - Ethernet II or Token-ring SNAP
+     03 - Ethernet 8022
+     04 - Ethernet SNAP"
+    ::={ npIpx 18 }
+
+npIpxJobPollInterval OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "Queue server job poll interval."
+    ::={ npIpx 19 }
+
+npIpxSapBroadcastInterval OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "Currently effective SAP broadcast Interval:
+     range: 0-3600 seconds
+     default: 60 seconds
+     0 value indicates SAP broadcasts are disabled. "
+    ::={ npIpx 20 }
+
+npIpxPjlEnableFlag OBJECT-TYPE
+    SYNTAX Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "Currently effective PJL Enable Flag, possible values include:
+      
+     00 - PJL disable
+     01 - PJL Job, banner
+     02 - Ustatus for end of job detection
+     03 - banners and end of job detection "
+    ::={ npIpx 21 }
+
+npIpxTonerLowNotification OBJECT-TYPE
+    SYNTAX Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+    "Current Configuration for toner low notification. Possible
+     values include:
+     
+     00 - notify only if intervention is required.
+     01 - Notify even if peripheral is still operational. "
+    ::={ npIpx 22 }
+
+npIpxNetNumber OBJECT-TYPE
+	SYNTAX Integer32
+	MAX-ACCESS read-only
+	STATUS current --
+	DESCRIPTION
+  	"Current Ipx network number."
+  ::={ npIpx 23 }
+ 
+--  Direct Mode Objects
+
+npDmConnSupp OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is the number of current active Direct Mode connections."
+    ::={ npDm 1 }
+
+npDmConnAvail OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is the number of Direct Mode connections available."
+    ::={ npDm 2 }
+
+npDmProtSupp OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is a bit string that contains a list of protocols over
+         which DirectMode is supported.  A specified bit represents each
+         protocol statck.  Support for more than one stack is indicated
+         by multiple bits ORed together.
+         0x01 = IPX/SPX
+         0x02 = TCP/IP
+         0x04 = DLC/LLC
+         0x08 = AppleTalk"
+    ::={ npDm 3 }
+
+npDmServerInfo1 OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(7..15))
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This object shows the address of the server that is connected
+         to the DirectMode slot.  This structure returns AT_AVAIL
+         if there is no server attached to this slot and AT_NOSUPP if
+         the slot number is out of range.
+           struct{
+                  ushort16 addrType;    /* type of address */  
+                  ushort16 pktSize;     /* size of negotiate packet size */
+                  uchar8   addr[4-12];  /* address */
+                 }
+           AT_AVAIL      0   /* connection available */
+           AT_NOTSUPP    1   /* connection slot not supported */
+           AT_SPX        2   /* 12-byte SPX address */
+           AT_TCP        3   /* 4-byte TCP address */
+           AT_LLC        4   /* 6-byte LLC address */
+           AT_AT         5   /* Appletalk address */
+         Only AT_AVAIL, AT_NOTSUPP, and AT_SPX are currently supported."
+    ::={ npDm 4 }
+
+--  LLC 
+
+llcN2Value OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is the value of the N2 variable used in the 802.2 type II
+         connection.  This value is the number of retransmissions that
+         could occur if a host peer is not responding.  The Ti timer is
+         this value (N2) times 3 (N2 x 3).  The value of the T1 timer is
+         this value (N2) in seconds."
+    ::={ llcconstategroup 1 }
+
+llcConnectionstate OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is the llc connection state for Lan Manager
+         and Lan Server.
+	 
+	 1 -  bp or fp or both disabled: not accepting connections
+         2 -  have bp connection and fp listening socket
+         3 -  have bp connection and fp data transfer connection
+         6 -  fp closed, waiting for bp term-ack before closing bp
+
+         States formerly reported for P68 generation products and 
+	 no longer used in Summit:
+
+         4 -  bp has 'idled' the app due to a lack of resources
+         5 -  fp closed and bp needs to be closed
+         NOTES:
+         Backplanes do not IDLE print apps in Summit Architecture and the 
+	 state TERMINATED is so transitional that it would only be 
+	 reported for a few milliseconds, if at all."
+    ::={ llcconstategroup 7 }
+
+npLlcServerAddress OBJECT-TYPE
+    SYNTAX  OCTET STRING (SIZE(6))
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "This is the LLC server address for Lan Manager and Lan Server."
+    ::={ llcconstategroup 8 }
+
+-- This is a new sub-tree for port information.  The first two apply to all
+-- JetDirect devices.  The rest apply only to EX boxes.
+
+npPortNumPorts OBJECT-TYPE
+    SYNTAX  Integer32 (0..255)
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of peripheral interfaces supported by this device."
+    ::={ npPort 1 }
+
+npPortType OBJECT-TYPE
+    SYNTAX  INTEGER {
+                unknown(1),
+                mio(2),
+                xio(3),
+                parallel(4),
+                centronics(5),
+                bitronics(6),
+                ecpNoMLC(7),
+                serial(8),
+                scsi(9),
+		ecpMLC(10)
+            }
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"The type of the peripheral interface.  A parallel port will return
+	 the specific protocol currently in use.  If the parallel port is
+	 disconnected it will return parallel(4)."
+    ::={ npPort 2 }
+
+npPortDesiredMode OBJECT-TYPE
+    SYNTAX  INTEGER {
+       bitronics(1), -- compatibility forward, nibble-mode backchannel
+       centronics(2), -- compatibility forward
+       ecpWithMLC(3), -- Full bi-directional ECP w/ MLC
+       ecpWithNibbleMLC(4), -- ECP forward, nibble-mode back-channel w/ MLC
+       ecp(5) -- Full bi-directional ECP w/o MLC
+    }
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "The desired (remotely specified) operating mode of the parallel port.
+
+	 The following map is used to determine mode availability and provides
+	 the definition for each mode:
+	                        Available When
+	    npPortDesiredMode   Definition
+	    ------------------  --------------
+	    1 bitronics         always
+				EX will attempt to retrieve nibble mode back
+				channel data from the printer.  If the printer
+				does not support bitronics, EX will default
+				back to compatibility mode.
+	    2 centronics        npPortMaxModeAvailable >= 1
+				EX will only support compatibility (centronics)
+				mode when talking to the printer
+	    3 ecpWithNibbleMLC  npPortMaxModeAvailable >= 1
+				EX will attempt to talk to the printer across
+				MLC.  This is done by using ECP in the forward
+				direction and nibble-mode bitronics in the
+				reverse direction.  If the printer does not
+				support both MLC and ECP, EX will fall back to 
+				regular bitronics, as described above.
+	    4 ecpWithMLC        npPortMaxModeAvailable >= 1
+				EX will attempt to talk to the printer across
+				MLC.  This is done by using ECP in both forward
+				and reverse directions.  If the printer does
+				not support both MLC and ECP, EX will fall back
+				to regular bitronics, as described above.
+	    5 ecp               npPortMaxModeAvailable >= 1
+				EX will attempt to talk to the printer using
+				ECP in both the forward and reverse directions.
+				If the printer does not support ECP, EX will
+				fall back to regular bitronics, as described
+				above.  EX-ONLY"
+    ::={ npPort 3 }
+
+npPortCentronicsHandshaking OBJECT-TYPE
+    SYNTAX  INTEGER {
+                nack-and-busy(1),
+                nack-only(2),
+                busy-only(3)
+            }
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "The handshaking to be used in sending data over the parallel port.
+         EX-ONLY"
+    ::={ npPort 4 }
+
+npPortStatusLines OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The state of the centronics status lines from the peripheral.  The
+	 value is a bit mask.
+         Bit      Value     Signal
+          0       0x01      nACK
+          1       0x02      
+          2       0x04      
+          3       0x08      
+          4       0x10      nFAULT
+          5       0x20      SELECT
+          6       0x40      PERROR
+          7       0x80      BUSY
+           EX-ONLY "
+    ::={ npPort 5 }
+
+
+npPortMaxModeAvaliable OBJECT-TYPE
+      SYNTAX  Integer32
+      MAX-ACCESS  read-only
+      STATUS  current --
+      DESCRIPTION
+         "The maximum available parallel mode by which the print-server may
+          connect to an attached peripheral.  This is a function of the
+	  the available hardware and firmware capabilities.  The value 
+	  represents a mode of parallel operation, as defined in the 
+	  following table:
+          Value     Mode
+	  -----     -----------------
+          0x01      Centronics
+          0x03      ECP/MLC w/ nibble
+	  0x04      ECP/MLC
+	  0x05      ECP, No MLC
+	   EX-ONLY"
+    ::={ npPort 6 }
+
+npPortBidiPollRate OBJECT-TYPE
+      SYNTAX  Integer32
+      MAX-ACCESS  read-write
+      STATUS  current --
+      DESCRIPTION
+          "Poll rate for bi-directional data.  
+          Range is 10 to 100 seconds.
+          Defaults to 40 seconds. EX-ONLY"
+      ::={ npPort 7 }
+
+
+npPortSetCentronicsTiming OBJECT-TYPE
+       SYNTAX  Integer32
+       MAX-ACCESS  read-write
+       STATUS  current --
+       DESCRIPTION
+          "Takes the 16 bit value and applies
+            it to the centronics timing register.
+            The default value is 0 and is not
+            applied to the centronics timing
+            register. EX-ONLY"
+       ::={ npPort 8 }
+
+npPortSetIoFlags OBJECT-TYPE
+       SYNTAX  Integer32
+       MAX-ACCESS  read-write
+       STATUS  current --
+       DESCRIPTION
+           "Sets and/or disables IO flags.
+            Reset value of 0. EX-ONLY"
+       ::={ npPort 9 }
+
+npPortSetEcpHostRecTimer OBJECT-TYPE
+      SYNTAX  Integer32
+      MAX-ACCESS  read-write
+      STATUS  current --
+      DESCRIPTION
+          "Takes the 16 bit value and applies
+           it to the Host Recovery Time Register.
+           The default value is 0. EX-ONLY"
+       ::={ npPort 10 }
+
+npPortSetIoFlags2 OBJECT-TYPE
+       SYNTAX  Integer32
+       MAX-ACCESS  read-write
+       STATUS  current --
+       DESCRIPTION
+           "Sets and/or disables IO flags.
+            Reset value of 0.  EX-ONLY"
+       ::={ npPort 11 }
+
+npPortUsbDesiredMode OBJECT-TYPE
+    SYNTAX  INTEGER {
+       automatic(1),
+       unidirectional(2),
+       bidirectional(3),
+       mlc(4)
+    }
+    MAX-ACCESS  read-write
+    STATUS  current
+    DESCRIPTION
+        "The desired operating mode of the USB interface to this device.
+         JetDirect normally uses the best interface the device supports.
+         Setting this object limits the device to a simpler interface when
+         the more complex interface does not work with JetDirect.
+         
+           automatic      = use best available protocol
+           unidirectional = limit to forward data only (USB class 7.1.1)
+           bidirectional  = limit to simple forward and reverse data (7.1.2)
+           mlc            = limit to HP-MLC protocol (USB class 7.1.2+)
+        "
+    ::={ npPort 12 }
+
+npPortUsbCurrentMode OBJECT-TYPE
+    SYNTAX  INTEGER {
+       unknown(1),
+       unidirectional(2),
+       bidirectional(3),
+       mlc(4),
+       dot4(5)
+    }
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The current operating mode of the USB interface to this device.
+         
+           unknown        = unknown or no device connected
+           unidirectional = forward data only (USB class 7.1.1)
+           bidirectional  = simple forward and reverse data (USB class 7.1.2)
+           mlc            = HP-MLC protocol (USB class 7.1.2+)
+           dot4           = IEEE 1284.4 protocol (USB class 7.1.3)
+        "
+    ::={ npPort 13 }
+
+npPortUsbProduct OBJECT-TYPE
+    SYNTAX  DisplayString128 
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The product string (if any) returned by the current USB device
+         on this port."
+    ::={ npPort 14 }
+
+npPortUsbManufacturer OBJECT-TYPE
+    SYNTAX  DisplayString128 
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The manufacturer string (if any) returned by the current USB device
+         on this port."
+    ::={ npPort 15 }
+
+npPortUsbSerialNumber OBJECT-TYPE
+    SYNTAX  DisplayString128 
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "The serial number string (if any) returned by the current USB device
+         on this port."
+    ::={ npPort 16 }
+
+
+--  npXip
+
+xipActive OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        " This indicates whether the card and peripheral support XIP and
+          at least one of the protocol stacks is enabled (TCP or IPX)."
+    ::= { npXip 1}
+
+--  CRC 
+
+npCRCTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF NpCRCEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+        " "
+    ::= { npCRC 1 }
+
+npCRCEntry OBJECT-TYPE
+    SYNTAX  NpCRCEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current --
+    DESCRIPTION
+	" "
+    INDEX   { npCRCIndex }
+    ::= { npCRCTable 1 }
+
+NpCRCEntry ::= SEQUENCE {
+    npCRCIndex
+        Integer32,
+    npCRCText
+	OCTET STRING,
+    npCRCChannel
+        Integer32
+}
+
+npCRCIndex OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        ""
+    ::= { npCRCEntry 1 }
+
+npCRCText OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        ""
+    ::= { npCRCEntry 2 }
+
+npCRCChannel OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        ""
+    ::= { npCRCEntry 3 }
+
+-- The DHCP group
+
+ npDHCPconfig OBJECT-TYPE  
+     SYNTAX INTEGER {
+                  dhcpDisable(1),
+                  dhcpEnable(2)
+                  }
+     MAX-ACCESS  read-write
+     STATUS  obsolete
+     DESCRIPTION
+         "This object allows a user to enable or disable 
+          configuration via DHCP. If DHCP is disabled, 
+          bootp is used for configuration. Supported in 
+          firmware revisions beginning with D-04-15, E-04-20(initial version, and 
+          ending at A,D,E-05. This functionality was moved to npCfgSource.
+	  
+         Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object." 
+     ::={ npDhcp 1 }
+
+
+npDHCPserver OBJECT-TYPE
+    SYNTAX  IpAddress
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "IP address of DHCP server that provided this unit with an IP
+         address via the DHCP protocol."
+    ::={ npDhcp 2 }
+
+
+--npScan group
+npScanIdleTimeout OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+	"The idle timeout is the length in seconds after which an
+         idle connection is terminated.  A value of zero disables
+         the timeout. Valid time values range from 1 to 3600."
+    ::={ npScan 1 }
+
+npScanTimeRemaining OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"The time remaining, in seconds, until the current connection's
+	 lock expires.  Once a connection's lock expires, JetDirect will
+	 terminate it if another connect request arrives.  The time is
+	 reset whenever there is activity on the connection.  A value of
+	 zero indicates there is no connection."
+    ::={ npScan 2 }
+
+
+npScanCurrentAddr OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"The remote address of the current scan connection.  The format
+	 is a sockaddr structure containing an IP or IPX address."
+    ::={ npScan 3 }
+
+
+npScanCurrentName OBJECT-TYPE
+    SYNTAX  OCTET STRING
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+	"Human readable name of the current scan client.  This object is
+	 a scratchpad for client software to provide the current user
+	 name so that other clients can include it in busy messages.
+	 JetDirect does not use this value; it is provided for
+	 cooperating software packages to notify each other of the
+	 current user name."
+    ::={ npScan 4 }
+
+npScanStatus OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"Current status of scanner.  Status values TBD."
+    ::={ npScan 5 }
+
+npMFPFeaturesSupported OBJECT-TYPE
+    SYNTAX  INTEGER
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+	"A bitmap of which MFP support features are present in this JetDirect.
+	The bits are:
+	  bit 0 = JetDirect scan gateway,
+	  bit 1 = JetDirect generic gateway,
+	  bit 2 = JetDirect push-notification gateway,
+	  bit 3-31 = undefined."
+    ::={ npScan 10 }
+
+
+-- npWeb group
+-- .1.3.6.1.4.1.11.2.4.3.18.1.0
+embeddedWebCfg  OBJECT-TYPE
+  SYNTAX Integer32
+  MAX-ACCESS read-only
+  STATUS obsolete --
+  DESCRIPTION
+  "Functionality provided by embedded web server (ews). 
+     0 = no ews
+     1 = ews on JetDirect for JetDirect status/configuration 
+     4 = ews on JetDirect for scanner status/configuration
+     8 = ews on device for device status/configuration
+     
+     Starting with firmware release X.20.06 and subsequent
+     releases, this object is obsolete as it provides no
+     relevant data for the new hardware architecture.
+     No current supported applications use this object." 
+    ::={ npWeb 1 }
+
+-- .1.3.6.1.4.1.11.2.4.3.18.2.0
+wjaFrameworkURL OBJECT-TYPE
+  SYNTAX OCTET STRING (SIZE(0..254))
+  MAX-ACCESS read-write
+  STATUS current --
+  DESCRIPTION
+  "Set by a present WJA system.  Once set, the WJD user interface will 
+   add a framework link from the WJD navigation bar.   This link will 
+   allow user navigation to the highest level page of WJA. This will allow 
+   users to easily navigate to WJA to manage other devices with the network. 
+   Since the URL can become stale, it is required that the WJD code verifies 
+   that the URL is active before actually using it. This is required since the 
+   WJA system may not always be operable.  Maximum length of the url must be 
+   less than 255 bytes."
+   ::={ npWeb 2 }
+
+
+-- .1.3.6.1.4.1.11.2.4.3.18.3.0
+wjaFrameworkName OBJECT-TYPE
+  SYNTAX OCTET STRING (SIZE(0..64))
+  MAX-ACCESS read-write
+  STATUS current --
+  DESCRIPTION
+  "Used by  WJA systems as a scratch pad location for communication of 
+    current wja name.  Name will be truncated to 64 characters."
+   ::={ npWeb 3 }
+
+-- .1.3.6.1.4.1.11.2.4.3.18.4.0
+extFrameworkURL OBJECT-TYPE
+  SYNTAX OCTET STRING (SIZE(0..254))
+  MAX-ACCESS read-write
+  STATUS current --
+  DESCRIPTION
+  "Set by a present external system.  Once set, the WJD user interface
+  will add a framework link from the WHD navigation bar.  This link 
+  will allow user navigation to the highest level page of WJA.  This will
+  allow users to easily navigate to external systems to manage other
+  devices with the network.  Since the URL can become stale, it is required
+  that the WJD code verifies that the URL is active before
+  actually using it.  This is required since the WJA system may not always be
+  operable.  Maximum length of the url must be less than 255 bytes."
+  ::={ npWeb 4 }
+
+
+-- .1.3.6.1.4.1.11.2.4.3.18.5.0
+extFrameworkName OBJECT-TYPE
+  SYNTAX OCTET STRING (SIZE(0..64))
+  MAX-ACCESS read-write
+  STATUS current --
+  DESCRIPTION
+  "Used by external systems as a scratch pad location for communication of
+  current wja name.  Name will be truncated to 64 characters."
+  ::={ npWeb 5 }
+
+-- .1.3.6.1.4.1.11.2.4.3.18.6.0
+ippUrl OBJECT-TYPE
+  SYNTAX OCTET STRING (SIZE(0..254))
+  MAX-ACCESS read-write
+  STATUS current --
+  DESCRIPTION
+  " Used by Internet Printing Protocol managers to define current URL.
+    Maximum length of the url must be less than 255 bytes."
+  ::={ npWeb 6 }
+
+npAtkInitOrReady OBJECT-TYPE
+   SYNTAX  INTEGER
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "Reports whether AppleTalk is initializing or ready.
+        Initializing > 0
+        Ready        = 0"
+   ::= { npAtk 1 }
+
+npAtkStatus OBJECT-TYPE
+   SYNTAX  OCTET STRING (SIZE(0..64))
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "Reports the status of the AppleTalk stack. Currently, if the stack is up 'Ready'
+        is returned if it is down 'NOT IN USE' is returned.  The strings returned may
+        change as the AppleTalk stack is updated."
+   ::= { npAtk 2 }
+
+npAtkNetConfigTable OBJECT-TYPE
+   SYNTAX SEQUENCE OF NpAtkNetConfigEntry
+   MAX-ACCESS  not-accessible
+   STATUS current
+   DESCRIPTION
+        "A table of AppleTalk network configuration information."
+   ::={ npAtk 3 }
+
+npAtkNetConfigEntry OBJECT-TYPE
+   SYNTAX NpAtkNetConfigEntry
+   MAX-ACCESS  not-accessible
+   STATUS current
+   DESCRIPTION
+        "Each row of the table gives the configuratin information for an
+        entity bound to a socket"
+   INDEX { npAtkNetConfigIndex }
+   ::={ npAtkNetConfigTable 1}
+
+   NpAtkNetConfigEntry ::=
+      SEQUENCE {
+         npAtkNetConfigName   OCTET STRING,
+         npAtkNetConfigZone   OCTET STRING,
+         npAtkNetConfigType   OCTET STRING,
+         npAtkNetConfigNet    INTEGER,
+         npAtkNetConfigNode   INTEGER,
+         npAtkNetConfigSocket INTEGER,
+         npAtkNetConfigIndex  INTEGER
+      }
+
+npAtkNetConfigName OBJECT-TYPE
+   SYNTAX OCTET STRING (SIZE(0..33))
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "AppleTalk Name of the Peripheral.  The actual peripheral name
+        stored on the periperal is used as the AppleTalk node name."
+   ::= { npAtkNetConfigEntry 1 }
+
+npAtkNetConfigZone OBJECT-TYPE
+   SYNTAX  OCTET STRING (SIZE(0..33))
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "Apple Talk Zone to which the periphral belongs. A zone is an arbitrary subset
+        of nodes within an AppleTalk internet."
+   ::= { npAtkNetConfigEntry 2 }
+
+npAtkNetConfigType OBJECT-TYPE
+   SYNTAX  OCTET STRING (SIZE(0..33))
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "The type associated with the socket.  This is meant to be a useful
+        description of what process is bound to the  socket.
+        ie LaserWriter print aplication, SNMP Agent, Zoner Responder"
+   ::= { npAtkNetConfigEntry 3 }
+
+npAtkNetConfigNet OBJECT-TYPE
+   SYNTAX  INTEGER (0..65535)
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "The AppleTalk network to which the node is connected."
+   ::= { npAtkNetConfigEntry 4 }
+
+npAtkNetConfigNode OBJECT-TYPE
+   SYNTAX  INTEGER (0..255)
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "The number assigned to this entity to uniquely identify it on the AppleTalk
+        network."
+   ::= { npAtkNetConfigEntry 5 }
+
+npAtkNetConfigSocket OBJECT-TYPE
+   SYNTAX  INTEGER (0..255)
+   MAX-ACCESS  read-only
+   STATUS  current
+   DESCRIPTION
+        "A socket is an addressable entity within a node connected to an
+        AppleTalk network.  The entity may be AppleTalk software process
+        or other clients such as: LaserWriter, Zoner Responder, etc"
+   ::= { npAtkNetConfigEntry 6 }
+
+npAtkNetConfigIndex OBJECT-TYPE
+   SYNTAX  INTEGER
+   MAX-ACCESS  not-accessible
+   STATUS  current
+   DESCRIPTION
+        "A unique value for each AppleTalk configuration interface."
+   ::= { npAtkNetConfigEntry 7 }
+
+
+
+--- The Trap Group
+
+trapDestinationNum OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-only
+    STATUS  current --
+    DESCRIPTION
+        "The number of trap destinations."
+    ::={ trapDest 1 }
+
+----------- The Trap Destination Table --------------
+-- The code which processes the trap destination table
+-- utilizes a union to minimize data space.  This is a very
+-- common "C" coding technique and adds important value.
+-- However, it introduces a complication to the design of this
+-- mib.  The "C" union results in multiple definitions for the 
+-- table entries, depending on protocol.  There is no way (that
+-- I know of) to provide a compilable mib which shows multiple
+-- definitions for the objects.  To resolve this I am showing the 
+-- AF_IPX object definitions commented out.
+--
+--Currently the Trap Destination Table does not follow the MIB
+--definition in the numbering of rows.  An example of the actual
+--output with two old style traps registered for notification is given:
+--
+--.1.3.6.1.4.1.11.2.13.1.1.0 : INTEGER: 1							
+--.1.3.6.1.4.1.11.2.13.1.2.1.1 : INTEGER: 1                         address family
+--.1.3.6.1.4.1.11.2.13.1.2.2.1 : IpAddress:       13.32.8.139       IP Address
+--.1.3.6.1.4.1.11.2.13.1.2.3.1 : INTEGER: 162                       port
+--.1.3.6.1.4.1.11.2.13.1.2.4.1 : OCTET STRING- (ascii):   public    community name
+--.1.3.6.1.4.1.11.2.13.1.2.5.1 : INTEGER: 0                         version
+--.1.3.6.1.4.1.11.2.13.1.2.6.1 : INTEGER: 2                         Inform Timeout
+--.1.3.6.1.4.1.11.2.13.1.2.7.1 : INTEGER: 3                         Inform Retry
+--.1.3.6.1.4.1.11.2.13.1.2.8.1 : INTEGER: 1                         trap owner
+--.1.3.6.1.4.1.11.2.13.1.2.9.1.1 : OBJECT IDENTIFIER:     .1.1.6.1.3       Old Style pml Trap
+--.1.3.6.1.4.1.11.2.13.1.2.9.1.2 : OBJECT IDENTIFIER:     .1.3.3.1.13      Old Style pml Trap
+--.1.3.6.1.4.1.11.2.13.1.4.0 : INTEGER: 0
+--.1.3.6.1.4.1.11.2.13.1.5.0 : INTEGER: 50
+ 
+ 
+trapDestinationTable OBJECT-TYPE
+    SYNTAX  SEQUENCE OF TrapDestinationEntry
+    MAX-ACCESS  not-accessible
+    STATUS current -- 
+    DESCRIPTION
+        "Protocol specific list of destinations
+                  to which the agent sends traps."
+    ::= { trapDest 2 }
+
+trapDestinationEntry OBJECT-TYPE
+    SYNTAX  TrapDestinationEntry
+    MAX-ACCESS  not-accessible
+    STATUS  current -- 
+    DESCRIPTION
+        "Entries are a protocol specific sequence of trap
+          destination parameters."
+    INDEX    { trapAddrFamily }
+    ::= { trapDestinationTable 1 }
+
+TrapDestinationEntry ::= SEQUENCE {
+    trapAddrFamily
+        Integer32,
+    -- for ip trapAddrFamily
+    trapAddrIp
+        IpAddress,
+    trapPort
+        Integer32,
+    trapCommunityName
+        OCTET STRING,
+   trapVersion
+        Integer32,
+   trapBaseTimeout
+        Integer32,
+   trapRetryNum
+        Integer32,
+  trapDestOwner
+        INTEGER,
+   pmlTrapList
+        OBJECT IDENTIFIER
+
+   -- for ipx trapAddrFamily
+   -- trapAddrNetwork
+   --     Integer32,
+   -- trapAddrNode
+   --     Integer32,
+   -- trapSocket,
+   --     Integer32,
+   -- trapFrameType,
+   --     Integer32,
+   -- trapPacketType,
+   --     Integer32,
+   -- trapCommunityName,
+   --     OCTET STRING,
+   -- trapVersion
+   --     Integer32,
+   -- trapBaseTimeout
+   --     Integer32,
+   -- trapRetryNum
+   --     Integer32
+  }
+
+-- for all protocols
+trapAddrFamily OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Protocol family for trap.  Possible values:
+
+                   0  not_SET
+                   1  af_UDP
+                   2  af_IPX
+                   3  af_LLC
+                   4  af_DDP"
+
+    ::= { trapDestinationEntry 1 }
+
+-- AF_UDP
+trapAddrIp  OBJECT-TYPE
+    SYNTAX  IpAddress 
+    MAX-ACCESS  read-write 
+    STATUS  current -- 
+    DESCRIPTION
+        "Ip address of trap destination."
+    ::= { trapDestinationEntry 2 }
+
+-- AF_UDP
+trapPort  OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write 
+    STATUS  current -- 
+    DESCRIPTION
+        "Host port to which traps are sent."
+    ::= { trapDestinationEntry 3 } 
+
+-- AF_UDP
+trapCommunityName  OBJECT-TYPE
+    SYNTAX  OCTET STRING 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+         "Trap community name specified in the trap packet."
+    ::= { trapDestinationEntry 4 }
+
+-- AF_UDP
+trapVersion  OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Trap version, one of the following
+          0 = snmpV1
+          1 = snmpV2
+          3 = Inform
+         Default is  0 = snmpV1.
+         This value remains persistent through a powercycle."
+
+    ::= { trapDestinationEntry 5 }
+
+-- AF_UDP
+trapBaseTimeout  OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Applicable only if trapVersion is set to Inform.
+         Units are 1/10 second intervals.  Default is 2
+         corresponding to 200 milliseconds.  This value corresponds
+         to the time of the first retry following the initial inform
+         request. Additional retries are sent at times corresponding to
+         the retry number multiplied by the trapBaseTimeout.
+         This value remains persistent through a powercycle."
+    ::= { trapDestinationEntry 6 }
+
+-- AF_UDP
+trapRetryNum  OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "This is the maximum number of inform retries that will be sent to
+          this destination.  Retries are sent if no inform reply is received
+          within the timeout value.  The timeout value is calculated as
+          described under trapBaseTimeout.
+          This value remains persistent through a powercycle."
+    ::= { trapDestinationEntry 7 }
+
+trapDestOwner  OBJECT-TYPE
+    SYNTAX  INTEGER {
+--                uninit (0), 
+                oldStylePML (1),
+                brady (2),
+                oldStyleAndBRADY (3) 
+            }
+    MAX-ACCESS read-only
+    STATUS  current 
+    DESCRIPTION
+	"This OID is read only. It is used to monitor the insertion and removal 
+ 	of a trap destination entry. It is controlled by the corresponding BRADY
+ 	and old style PML registrations."
+    ::= { trapDestinationEntry 8 }
+    
+-- Protocol Specific: AF_UDP
+--.1.3.6.1.4.1.11.2.13.1.9.row.pmlTrapIndex
+pmlTrapList  OBJECT-TYPE
+    SYNTAX  OBJECT IDENTIFIER
+    MAX-ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+	"This OID is read only. It is used to monitor the insertion and removal of
+	 an old style PML trap entry. It is controlled by the corresponding old
+	 style PML registrations. If a trap destination entry is registered for only
+	 BRADY traps, then the pmlTrapList OID will not show on this entry MIB walk."
+    ::= { trapDestinationEntry 9 }
+
+
+-- AF_IPX
+-- trapAddrNetwork  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--        "Network address of host to which traps are sent."
+--    ::= { trapDestinationEntry 2 }
+
+-- AF_IPX
+-- trapAddrNode  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--         "Node address of host to which traps are sent."
+--    ::= { trapDestinationEntry 3 }
+
+-- AF_IPX
+-- trapSocket  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--         "Host socket to which traps are sent."
+--    ::= { trapDestinationEntry 4 }
+
+-- AF_IPX
+-- trapFrameType  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--         "Frame type for outbound packet"
+--    ::= { trapDestinationEntry 5 }
+
+-- AF_IPX
+-- trapPacketType  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--         "Packet type for outbound packet"
+--    ::= { trapDestinationEntry 6 }
+
+-- AF_IPX
+-- trapCommunityName  OBJECT-TYPE
+--    SYNTAX OCTET STRING 
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--         "Trap community name specified in the trap packet."
+--    ::= { trapDestinationEntry 7 }
+
+-- AF_IPX
+--trapVersion  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--        "Trap version, one of the following
+--          0 = snmpV1
+--          1 = snmpV2
+--          3 = Inform
+--         Default is  0 = snmpV1.
+--         This value remains persistent through a powercycle."
+--    ::= { trapDestinationEntry 8 }
+
+-- AF_IPX
+--trapBaseTimeout  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--        "Applicable only if trapVersion is set to Inform.
+--         Units are 1/10 second intervals.  Default is 2
+--         corresponding to 200 milliseconds.  This value corresponds
+--         to the time of the first retry following the initial inform
+--         request. Additional retries are sent at times corresponding to
+--         the retry number multiplied by the trapBaseTimeout.
+--         This value remains persistent through a powercycle."
+--    ::= { trapDestinationEntry 9 }
+
+-- AF_IPX
+--trapRetryNum  OBJECT-TYPE
+--    SYNTAX  Integer32
+--    MAX-ACCESS  read-write
+--    STATUS  current --
+--    DESCRIPTION
+--        "This is the maximum number of inform retries that will be sent to
+--          this destination.  Retries are sent if no inform reply is received
+--          within the timeout value.  The timeout value is calculated as
+--          described under trapBaseTimeout.
+--          This value remains persistent through a powercycle."
+--    ::= { trapDestinationEntry 10 }
+
+-- AF_IPX
+--.1.3.6.1.4.1.11.2.13.1.11.row
+--trapDestOwner  OBJECT-TYPE
+--    SYNTAX  INTEGER {
+--                uninit (0),
+--                oldStylePML (1),
+--                brady (2),
+--                oldStyleAndBRADY (3)
+--             }
+--    MAX-ACCESS read-only
+--    STATUS  current
+--    DESCRIPTION
+--        "This OID is read only. It is used to monitor the insertion and removal
+--        of a trap destination entry. It is controlled by the corresponding BRADY
+--        and old style PML registrations."
+--    ::= { trapDestinationEntry 11 }
+
+-- Protocol Specific: AF_IPX
+--.1.3.6.1.4.1.11.2.13.1.12.row.pmlTrapIndex
+--pmlTrapList  OBJECT-TYPE
+--    SYNTAX  OBJECT IDENTIFIER
+--    MAX-ACCESS  read-only
+--    STATUS  current
+--    DESCRIPTION
+--        "This OID is read only. It is used to monitor the insertion and removal of
+--         an old style PML trap entry. It is controlled by the corresponding old
+--         style PML registrations. If a trap destination entry is registered for only
+--         BRADY traps, then the pmlTrapList OID will not show on this entry MIB walk."
+--    ::= { trapDestinationEntry 12 }
+trapTest OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Causes agent to send an snmp trap to hosts registered in the trap
+               destination table.  Value specified will be used as the specific 
+trap id."
+    ::={ trapDest 3 }
+
+trapSource OBJECT-TYPE
+    SYNTAX  Integer32 
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+        "Sets the agent internal source for traps.  Possibilities are as follows:
+         0 = ALL_TRAPS_ON
+         1 = ASYNC_PERIPHERAL_STATUS traps only
+         2 = proprietary pml traps only
+         3 = alert table traps only  "
+    ::={ trapDest 4 }
+
+trapFilterDelay OBJECT-TYPE
+    SYNTAX  Integer32
+    MAX-ACCESS  read-write
+    STATUS  current --
+    DESCRIPTION
+      " The purpose of the trap filter feature is to prevent multiple traps
+        of the same specificTrapId to be sent within a short period of time.
+        This object assigns the period of time within which a duplicate trap
+        will be blocked.  This value is in 1/10 second intervals and the default
+        value is set to 50 corresponding to 5 seconds. This value remains 
+persistent
+        through a powercycle."
+    ::={ trapDest 5 }
+
+-- Download Objects from ICF
+
+hpicfDownloadTable   OBJECT-TYPE
+    SYNTAX           SEQUENCE OF HpicfDownloadEntry
+    MAX-ACCESS           not-accessible
+    STATUS           current
+	DESCRIPTION
+		"A table of firmware downloads to this device.  There will
+		at any time be either 0 or 1 rows in this table, and the
+		only valid index for this table is 1.  It is only a table
+		so that we may take advantage of the RowStatus textual
+		convention for configuring the download parameters."
+	::= { hpicfDownload 1 }
+
+hpicfDownloadEntry OBJECT-TYPE
+	SYNTAX     HpicfDownloadEntry
+	MAX-ACCESS     not-accessible
+	STATUS     current
+	DESCRIPTION
+		"The row in the hpicfDownloadTable containing the download
+		parameters."
+	INDEX      { hpicfDownloadIndex }
+	::= { hpicfDownloadTable 1 }
+
+-- NOTE: JetDirect 'Summit' firmware architecture doesn't implement 
+--       hpicfDownloadOwnerAddress, hpicfDownloadOwnerDomain, or
+--       hpicfDownloadResetType as those objects don't provide 
+--       relevant information for the new architecture and aren't 
+--       needed for download activities. As JetDirect doesn't own
+--       the Hpicf MIB branch, we don't deprecate or obsolete these
+--       objects. However, the objects are no longer used. 
+HpicfDownloadEntry ::=
+        SEQUENCE {
+        hpicfDownloadIndex          INTEGER,
+     -- hpicfDownloadOwnerAddress   OCTET STRING, 
+     -- hpicfDownloadOwnerDomain    OBJECT IDENTIFIER,
+        hpicfDownloadTAddress	    OCTET STRING,
+        hpicfDownloadTDomain        OBJECT IDENTIFIER,
+        hpicfDownloadFilename	    DisplayString,
+     -- hpicfDownloadResetType      INTEGER,
+        hpicfDownloadErrorStatus    INTEGER, 
+        hpicfDownloadErrorText	    DisplayString,
+        hpicfDownloadStatus         INTEGER
+        }
+
+hpicfDownloadIndex OBJECT-TYPE
+	SYNTAX     INTEGER {
+                       dlInstance (1)
+	           }
+	MAX-ACCESS     not-accessible
+	STATUS     current --
+	DESCRIPTION
+		"The index which uniquely identifies this row.  The only
+		legal value for this object is 1."
+	::= { hpicfDownloadEntry 1 }
+
+hpicfDownloadTAddress OBJECT-TYPE
+	SYNTAX     OCTET STRING
+	MAX-ACCESS     read-write
+	STATUS     current --
+	DESCRIPTION
+	"The transport address of the node to download firmware from,
+	formatted according to the value of hpicfDownloadTDomain.
+	
+	An attempt to modify this value will fail if the associated
+	hpicfDownloadStatus object would be equal to 'active' both
+	before and after the modification attempt."
+	::= { hpicfDownloadEntry 4 }
+
+hpicfDownloadTDomain OBJECT-TYPE
+	SYNTAX     OBJECT IDENTIFIER
+	MAX-ACCESS     read-write
+	STATUS     current --
+	DESCRIPTION
+	"The kind of transport service to be used for the download.
+	Currently supports snmpUDPDomain and snmpIPXDomain.
+		
+	An attempt to modify this value will fail if the associated
+	hpicfDownloadStatus object would be equal to 'active' both
+	before and after the modification attempt."
+	::= { hpicfDownloadEntry 5 }
+
+hpicfDownloadFilename OBJECT-TYPE
+	SYNTAX     DisplayString
+	MAX-ACCESS     read-write
+	STATUS     current --
+	DESCRIPTION
+	"Filename and path of file to download (maximum length of
+	63 characters + NULL).
+	
+	An attempt to modify this value will fail if the associated
+	hpicfDownloadStatus object would be equal to 'active' both
+	before and after the modification attempt."
+	::= { hpicfDownloadEntry 6 }
+
+hpicfDownloadErrorStatus OBJECT-TYPE
+	SYNTAX     INTEGER {
+                       fileNotFound(1),
+                       accessViolation(2),
+                       diskFull(3),
+                       illegalOperation(4),
+                       unknownTID(5),
+                       fileExists(6),
+                       noSuchUser(7),
+                       notDefined(8),
+                       corruptFile(9),
+                       noServer(10),
+                       tftpTimeout(11),
+                       hardwareError(12),
+                       success(13),
+                       inProgress(14),
+                       idle(15),
+                       erasing(16),
+                       incomplete(17)
+                    }
+	MAX-ACCESS     read-only
+	STATUS     current --
+	DESCRIPTION
+	"Status of download.  The first seven codes are equal to the
+	codes defined by the TFTP protocol.  'notDefined' is the same
+	as TFTP protocol error 0.  'corruptFile' means that the agent
+	detected a problem with the download file format.  'noServer'
+	means the TFTP server at hpicfDownloadTAddress did not
+	respond to the TFTP request.  'tftpTimeout' means that the 
+	download was aborted due to excessive timeouts. 'hardwareError'
+	means that there was a hardware problem on the agent that
+	forced an abort of the download (see hpicfDownloadErrorText
+	for more detailed information).  'success' means that the 
+	download has completed successfully.  'inProgress' means that
+	the TFTP transfer is currently active.  'idle means' that the 
+	download has not yet started (i.e. the value of 
+	hpicfDownloadStatus has not yet been set to 'active')."
+	::= { hpicfDownloadEntry 8 }
+
+hpicfDownloadErrorText OBJECT-TYPE
+	SYNTAX     DisplayString
+	MAX-ACCESS     read-only
+	STATUS     current --
+	DESCRIPTION
+		"A textual description of the current error status of the
+		firmware download."
+	::= { hpicfDownloadEntry 9 }
+
+hpicfDownloadStatus OBJECT-TYPE
+    SYNTAX     INTEGER {
+                  active(1),
+                  notInService(2),
+                  notReady(3),
+                  createAndGo(4),
+                  createAndWait(5),
+                  destroy(6)
+                  }
+
+	MAX-ACCESS     read-write
+	STATUS     current --
+	DESCRIPTION
+		"The status of this download entry.  This object
+		may not be set to 'active' unless the following columnar
+		objects exist in this row: hpicfDownloadOwnerAddress,
+		hpicfDownloadOwnerDomain, hpicfDownloadTAddress,
+		hpicfDownloadTDomain, and hpicfDownloadFilename."
+	::= { hpicfDownloadEntry 10 }
+
+hpicfDownloadLogMaxSize OBJECT-TYPE
+    SYNTAX     Integer32
+    MAX-ACCESS     read-only
+    STATUS  obsolete
+    DESCRIPTION
+        "The maximum number of the download log entries 
+         supported by this agent.  Note that 0 is a legal
+         value for this variable.
+	 
+	 Starting with firmware release X.20.06 and subsequent
+         releases, this object is obsolete as it provides no
+         relevant data for the new hardware architecture.
+         No current supported applications use this object."
+    ::= { hpicfDownload 2 }
+
+
+-- Access Control Objects
+
+setCommunityName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (0..255))
+    MAX-ACCESS      read-write
+    STATUS      current --
+    DESCRIPTION
+      "This object controls access of snmp read-write requests.  Factory
+        default configuration provides authentication of incoming packets 
+        with community names: internal and public.  This object overrides the 
+        factory default settings so that the factory default setttings no longer
+        work. This object returns SET or NOT_SET."
+  ::= { community 1 }
+
+getCommunityName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE (0..255))
+    MAX-ACCESS      read-write
+    STATUS      current --
+    DESCRIPTION
+      "This object controls access of snmp read requests.  Factory
+        default configuration provides authentication of incoming packets
+        with community names: internal and public.  This object provides
+        access in addition to the factory default settings. If 
+        set, then authentication will succeed with any of the following
+        community names: internal, public, getCommunityName, or 
+        setCommunityName. This object returns SET or NOT_SET."
+  ::= { community 2 }
+
+
+hpHttpMgDefaultURL    OBJECT-TYPE
+	SYNTAX      OCTET STRING 
+	MAX-ACCESS      read-only
+	STATUS      current -- 
+	DESCRIPTION
+	"A Uniform Resource Locator (URL), as defined in RFC1738,
+	for the default management information for this device. 
+	This URL is typically used by a HTTP browser to display
+	management information for this device.  This default page
+	should contain links to any other management pages for this device."
+  ::= { hpHttpMgDefaults 1}
+
+
+END
+
+
