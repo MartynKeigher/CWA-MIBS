@@ -1,0 +1,483 @@
+VERTICAL-ENV-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+             Gauge, enterprises
+                     FROM RFC1155-SMI
+             DisplayString
+                     FROM RFC1213-MIB
+             OBJECT-TYPE
+                     FROM RFC-1212
+             TRAP-TYPE
+                     FROM RFC-1215;
+             
+
+vertical OBJECT IDENTIFIER ::= { enterprises 2338 }  
+
+
+     --  This MIB module uses the extended OBJECT-TYPE macro 
+	 --  as defined in RFC 1212.
+  
+     --  This is the MIB module for Vertical Networks IO Box
+     --  environment.Presently, this includes cooling fans 
+     --  and Power supply units.  
+	 --  This MIB is found in the private.enterprise branch 
+	 --  of the MIB tree.
+
+     --  Author  : Raju Viswambharan
+     --  Version : 1.0
+     --  Date    : 19 October, 1998
+     --  Comments : created
+ 
+
+     -- This MIB is structured into two groups:
+	
+     --	The Fan Table: Which contains status information about
+     --                       the InstantOffice cooling fans
+     --	The Power Supply Table: Which contains status 
+     --                         information about the Instant 
+	 --							Office power supply units
+	 --	The Trap Info Group: Which contains more information
+     --                      about the last Fan, Power Supply 
+	 --					     and Fault Monitor Trap.
+     --	The Temperature Table: Which contains status 
+     --                         information about the Instant 
+	 --							Office temperature sensors
+     --	The DC Power Supply Table: Which contains status 
+     --                         information about the Instant 
+	 --							Office DC power supply units
+	 
+	 --11 22 2000 madhu 10250; changes:
+	 --Environment            -> environment
+	 --IOFanTable             -> ioFanTable
+	  --IOPSTable             -> ioPSTable
+	  --IOFaultMonitorGroup   -> ioFaultMonitorGroup 
+	 --IOFaultMonitorStatus   -> ioFaultMonitorStatus
+	 --RAMFull                -> ramFull
+	 --NotResponding          -> notResponding
+	 --Ok                     -> ok
+	 --ModemFailed            -> modemFailed 
+	 --IOTrapInfoGroup        -> ioTrapInfoGroup
+	 --IOLastFanTrap          -> ioLastFanTrap
+	 --IOLastPowerSupplyTrap  -> ioLastPowerSupplyTrap
+	 --IOLastFaultMonitorTrap -> ioLastFaultMonitorTrap
+	 --IOFanStatus            -> ioFanStatus
+	 --IOPowerSupplyStatus    -> ioPowerSupplyStatus
+	 --IOFaultMonitorStatus   -> ioFaultMonitorStatus 
+	 --Environment            -> environment
+	 --						  -> ioLastOutsideRangeTemperatureTrap
+	 --						  -> ioLastInsideRangeTemperatureTrap
+	 --						  -> ioLastOutsideRangeDCPowerSupplyTrap
+	 --						  -> ioLastInsideRangeDCPowerSupplyTrap
+	 environment    OBJECT IDENTIFIER ::= {vertical 11}
+								   
+     -- The Fan Table  - The InstantOffice fan table
+--Bug Fixes : #10030
+		
+       ioFanTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF IOFanEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+               "Table of status information about all 
+			    InstantOffice cooling fans"
+       ::= { environment 1 }
+
+       ioFanEntry OBJECT-TYPE
+             SYNTAX  IOFanEntry
+             ACCESS  not-accessible
+             STATUS  mandatory
+             DESCRIPTION
+              "An entry in the Fan Table."
+             INDEX {fanIndex}
+             ::= {ioFanTable 1}
+     
+       IOFanEntry ::=
+            SEQUENCE {
+			  fanIndex
+                 INTEGER,
+              fanOperStatus
+                 INTEGER
+            }
+
+
+	  fanIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                 "The index of the cooling fan within the system"
+              ::= { ioFanEntry 1}
+
+       fanOperStatus OBJECT-TYPE
+              SYNTAX  INTEGER {
+					running				(1), 
+					stopped				(2),
+					unknown				(3) 
+			  }    
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                 "The operational status of this fan.
+				  The following are valid values:
+					running	=1,(the normal	operational state),	stopped	=2, unknown	=3"
+              ::= { ioFanEntry 2}
+
+
+     -- The PowerSupply Table  - The InstantOffice Power 
+	 --                          Supply Table
+		
+       ioPSTable OBJECT-TYPE
+              SYNTAX  SEQUENCE OF IOPSEntry
+              ACCESS  not-accessible
+              STATUS  mandatory
+              DESCRIPTION
+               "Table of status information about all
+			    InstantOffice power supplies"
+       ::= { environment 2 }
+
+       ioPSEntry OBJECT-TYPE
+             SYNTAX  IOPSEntry
+             ACCESS  not-accessible
+             STATUS  mandatory
+             DESCRIPTION
+              "An entry in the Power Supply Table."
+             INDEX {psIndex}
+             ::= {ioPSTable 1}
+     
+       IOPSEntry ::=
+            SEQUENCE {
+			  psIndex
+                 INTEGER,
+              psOperStatus
+                 INTEGER
+            }
+
+
+	  psIndex OBJECT-TYPE
+              SYNTAX  INTEGER
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                 "The index of the power supply unit within the system"
+              ::= { ioPSEntry 1}
+
+       psOperStatus OBJECT-TYPE
+              SYNTAX  INTEGER {
+					on					(1), 
+					off					(2),
+					unknown				(3) 
+			  }    
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                 "The operational status of this power supply.
+				  The following are valid
+				  values:
+					on=1, off=2, unknown=3 "
+              ::= { ioPSEntry 2}
+
+
+	-- Fault Monitor Group - contains information about the 
+	--                          Fault Monitor Status
+
+	ioFaultMonitorGroup OBJECT IDENTIFIER ::= { environment 3 }
+	
+	
+
+	ioFaultMonitorStatus OBJECT-TYPE
+		SYNTAX  INTEGER {
+					ramFull					(1), 
+					notResponding			(2),
+					ok						(3),
+					modemFailed				(4) 
+			  }    
+              ACCESS  read-only
+              STATUS  mandatory
+              DESCRIPTION
+                 "The operational status of the Fault 
+				  Monitor. The following are valid 
+				  values:
+					RAMFull					=1, 
+					NotResponding			=2, 
+					Ok						=3,
+					ModemFailed				=4 "
+              ::= { ioFaultMonitorGroup 1}
+
+
+	-- Trap Information Group - contains information about 
+	--                 the last Fan and Power Supply Traps
+
+	ioTrapInfoGroup OBJECT IDENTIFIER ::= { environment 4 }
+	
+	
+
+	ioLastFanTrap OBJECT-TYPE
+		SYNTAX      DisplayString (SIZE (0..255))
+		ACCESS  read-only
+		STATUS      mandatory
+		DESCRIPTION
+            "This object describes,in more detail,the last Fan
+			 Trap event that occurred. Since traps for all fans
+			 are combined into one Trap, this string describes
+			 each fan status just after the trap condition."
+			::= { ioTrapInfoGroup 1 }
+
+
+
+	ioLastPowerSupplyTrap OBJECT-TYPE
+		SYNTAX      DisplayString (SIZE (0..255))
+        ACCESS  read-only
+        STATUS      mandatory
+        DESCRIPTION
+            "This object describes,in more detail,the last 
+			 Power Supply Trap event that occurred. Since 
+			 traps for all power supplies are combined into
+			 one Trap, this string describes each power 
+			 supply status just after the trap condition."
+			::= { ioTrapInfoGroup 2 }
+
+	ioLastFaultMonitorTrap OBJECT-TYPE
+		SYNTAX      DisplayString (SIZE (0..255))
+        ACCESS  read-only
+        STATUS      mandatory
+        DESCRIPTION
+            "This object describes,in more detail,the last
+			 Fault Monitor Trap event that occurred. Since
+			 traps for all Fault Monitor events are combined
+			 into one Trap,this string describes the Fault
+			 Monitor event (RAM full, NotResponding Switching between Primary
+			 and Secondary drive for booting,or 
+			 Modem Failed) that caused this trap."
+			::= { ioTrapInfoGroup 3 }
+
+
+	ioLastIOSchedulerInfoTrap OBJECT-TYPE
+		SYNTAX      DisplayString (SIZE (0..255))
+        ACCESS  read-only
+        STATUS      mandatory
+        DESCRIPTION
+            "This object describes,in more detail,the last
+			 IOSceduler Information Trap event that occurred. "
+			::= { ioTrapInfoGroup 4 }
+
+	ioLastIOSchedulerWarningTrap OBJECT-TYPE
+		SYNTAX      DisplayString (SIZE (0..255))
+        ACCESS  read-only
+        STATUS      mandatory
+        DESCRIPTION
+            "This object describes,in more detail,the last
+			 IOSceduler Warning Trap event that occurred."
+			::= { ioTrapInfoGroup 5 }
+
+	ioLastIOSchedulerErrorTrap OBJECT-TYPE
+		SYNTAX      DisplayString (SIZE (0..255))
+        ACCESS  read-only
+        STATUS      mandatory
+        DESCRIPTION
+            "This object describes,in more detail,the last
+			 IOSceduler Error Trap event that occurred."
+			::= { ioTrapInfoGroup 6 }
+
+	ioLastOutsideRangeTemperatureTrap OBJECT-TYPE
+		SYNTAX  DisplayString (SIZE (0..512))
+        ACCESS  read-only
+        STATUS  mandatory
+        DESCRIPTION
+            "This object describes, in more detail, the last 
+			 outside range temperature trap event that occurred.
+			 Since traps for all temperature sensors are combined
+			 into one trap, this string describes each temperature 
+			 sensor status just after the trap condition."
+			::= { ioTrapInfoGroup 7 }
+
+	ioLastInsideRangeTemperatureTrap OBJECT-TYPE
+		SYNTAX  DisplayString (SIZE (0..512))
+        ACCESS  read-only
+        STATUS  mandatory
+        DESCRIPTION
+            "This object describes, in more detail, the last 
+			 inside range temperature trap event that occurred.
+			 Since traps for all temperature sensors are combined
+			 into one trap, this string describes each temperature 
+			 sensor status just after the trap condition."
+			::= { ioTrapInfoGroup 8 }
+
+	ioLastOutsideRangeDCPowerSupplyTrap OBJECT-TYPE
+		SYNTAX  DisplayString (SIZE (0..512))
+        ACCESS  read-only
+        STATUS  mandatory
+        DESCRIPTION
+            "This object describes, in more detail, the last 
+			 outside range DC power supply trap event that occurred.
+			 Since traps for all DC power supplies are combined
+			 into one trap, this string describes each DC power 
+			 supply status just after the trap condition."
+			::= { ioTrapInfoGroup 9 }
+
+	ioLastInsideRangeDCPowerSupplyTrap OBJECT-TYPE
+		SYNTAX  DisplayString (SIZE (0..512))
+        ACCESS  read-only
+        STATUS  mandatory
+        DESCRIPTION
+            "This object describes, in more detail, the last 
+			 inside range DC power supply trap event that occurred.
+			 Since traps for all DC power supplies are combined
+			 into one trap, this string describes each DC power 
+			 supply status just after the trap condition."
+			::= { ioTrapInfoGroup 10 }
+
+ 
+     -- The Temperature - The InstantOffice Temperature Info		
+	ioTemperature OBJECT IDENTIFIER ::= { environment 5 }	
+
+	ioCurrentTemperature OBJECT-TYPE
+		SYNTAX  DisplayString (SIZE (0..512))
+		ACCESS  read-only
+		STATUS  mandatory
+		DESCRIPTION
+            "This object describes, in more detail, the current  
+			 status of Temperature of the IO. Since all Temperature
+			 sensors are combined into one query, this string 
+			 describes each temperature sensor status at the
+			 moment the query is invoked."
+			::= { ioTemperature 1 }
+
+     -- The DCPowerSupply - The InstantOffice DC Power Supply Info		
+	ioDCPowerSupply OBJECT IDENTIFIER ::= { environment 6 }	
+
+	ioCurrentDCPowerSupply OBJECT-TYPE
+		SYNTAX  DisplayString (SIZE (0..512))
+		ACCESS  read-only
+		STATUS  mandatory
+		DESCRIPTION
+            "This object describes, in more detail, the current  
+			 status of DC power supplies of the IO. Since all DC
+			 power supplies are combined into one query, this 
+			 string describes each DC power supply status at the
+			 moment the query is invoked."
+			::= { ioDCPowerSupply 1 }
+
+-- TRAP Definitions - 
+
+ioFanStatus TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastFanTrap }
+	DESCRIPTION
+        " This notification is sent when one (or more) 
+		  cooling fans changes state (i.e. it goes from
+		  an ON state to OFF state or vice-versa. Even
+		  if more than one fan changes state, only one 
+		  trap is sent. Information about the new state
+		  of all the fans is sent in the Trap Data
+		  (IOLastFanTrap)"
+	::= 47
+
+ioPowerSupplyStatus TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastPowerSupplyTrap }
+	DESCRIPTION
+        " This notification is sent when one (or more)
+		  power supply units changs state (i.e it goes
+		  from an ON state to an OFF state, or vice 
+		  versa). Even if more than one power supply 
+		  changes state, only one trap is sent. Information
+		  about the new state of all the power supplies 
+		  is sent in the Trap Data (IOLastPowerSupplyTrap)."
+	::= 48
+
+ioFaultMonitorStatus TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastFaultMonitorTrap }
+	DESCRIPTION
+        " This notification is sent when or more of
+		  the following Fault Monitor Events occur:
+		  RAM full, Fault Monitor NotResponding or 
+		  Modem Failed. Information about these 
+		  events is contained in the Trap data
+		  (ioLastFaultmonitorTrap)."
+	::= 49
+
+
+ioSchedulerInfo TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastIOSchedulerInfoTrap }
+	DESCRIPTION
+        " This notification is sent whenever an information
+		  (including success notification) pertaining to
+		  the IOScheduler operation needs to be sent out.
+		  Specific information regrading this trap is contained
+		  in the Trap data (ioLastIOSchedulerInfoTrap)."
+	::= 83
+
+ioSchedulerWarning TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastIOSchedulerWarningTrap }
+	DESCRIPTION
+        " This notification is sent whenever a warning
+		  pertaining to the IOScheduler operation occurs. 
+		  Specific information regarding this trap is 
+		  contained in the Trap data 
+		  (ioLastIOSchedulerWarningTrap)."
+	::= 84
+
+
+ioSchedulerError TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastIOSchedulerErrorTrap }
+	DESCRIPTION
+        " This notification is sent whenever an error
+		   pertaining to the IOScheduler operation occurs.
+		  Specific information regrading this trap is contained
+		  in the Trap data (ioLastIOSchedulerWarningTrap)."
+	::= 85
+
+ioTrapInfoGroup TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastOutsideRangeTemperatureTrap }
+	DESCRIPTION
+        " This notification is sent when one or more temperature 
+		  sensors measure a temperature outside the normal operating
+		  range (10C < OK < 40C).  Subsequent traps will be generated
+		  for each degree of decrease below 10C down to 0C or increase
+		  above 40C up to 50C. Information about the current state of
+		  all the temperature sensors is sent in the Trap Data 
+		  (ioLastTemperatureOutsideRangeTrap)."
+	::= 92
+
+ioTrapInfoGroup TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastInsideRangeTemperatureTrap }
+	DESCRIPTION
+        " This notification is sent when one or more temperature
+		  sensors return to normal operating temperature range.  
+		  Information about the current state of all the 
+		  temperature sensors is sent in the Trap Data 
+		  (ioLastTemperatureInsideRangeTrap)."
+	::= 93
+
+ioTrapInfoGroup TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastOutsideRangeDCPowerSupplyTrap }
+	DESCRIPTION
+        " This notification is sent when one or more DC power supply 
+		  sensors measure a voltage outside the normal operating range. 
+		  The power supplies monitored are +2.5, +3.3, +5, +12, and 
+		  CPU core. Information about the current state of all the DC
+		  power supply sensors is sent in the Trap Data 
+		  (ioLastDCPowerSupplyOutsideRangeTrap)."
+	::= 94
+
+ioTrapInfoGroup TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {ioLastInsideRangeDCPowerSupplyTrap }
+	DESCRIPTION
+        " This notification is sent when one or more DC power supply 
+		  sensors return to normal operating voltage range.  
+		  Information about the current state of all the power 
+		  supplies is sent in the Trap Data 
+		  (ioLastDCPowerSupplyInsideRangeTrap)."
+	::= 95
+
+END
+
+

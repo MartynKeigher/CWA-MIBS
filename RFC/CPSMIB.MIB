@@ -1,0 +1,1756 @@
+--/********************* (c) 2003 CyberPower System ***************************/
+--
+-- PROJECT: SNMP MIB FILE CONSTRUCTED
+--
+-- Title: CPS TOP LEVEL MIB
+--
+-- Version : 1.2
+--
+-- File Name: CPSMIB.mib
+--
+-- CREATION DATE :  03/10/2006
+--
+-- AUTHOR : David
+--
+--//////////////////////////////////////////////////////////////////////////////
+--
+-- DESCRIPTION : CPS Management Information Base(MIB)
+--
+--//////////////////////////////////////////////////////////////////////////////
+--
+-- MODIFICATIONS :
+--
+--/****************************************************************************/
+-- CPSMIB { iso org(3) dod(6) internet(1) private(4)
+--          enterprises(1) cps(3808) }
+
+CPSMIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+   enterprises, Gauge, TimeTicks, IpAddress         FROM RFC1155-SMI
+   DisplayString                                    FROM RFC1213-MIB
+   OBJECT-TYPE                                      FROM RFC-1212
+   TRAP-TYPE                                        FROM RFC-1215;
+
+
+cps                            OBJECT IDENTIFIER ::=  { enterprises 3808 }
+
+products                       OBJECT IDENTIFIER ::=  { cps 1 }
+cpsmgmt                        OBJECT IDENTIFIER ::=  { cps 2 }
+
+hardware                       OBJECT IDENTIFIER ::=  { products 1 }
+
+
+mconfig                        OBJECT IDENTIFIER ::=  { cpsmgmt 1 }
+mtrapinfo                      OBJECT IDENTIFIER ::=  { cpsmgmt 2 }
+
+
+ups                            OBJECT IDENTIFIER ::=  { hardware 1 }
+eswitch                        OBJECT IDENTIFIER ::=  { hardware 2 }
+
+
+upsIdent                       OBJECT IDENTIFIER ::=  { ups 1 }
+upsBattery                     OBJECT IDENTIFIER ::=  { ups 2 }
+upsInput                       OBJECT IDENTIFIER ::=  { ups 3 }
+upsOutput                      OBJECT IDENTIFIER ::=  { ups 4 }
+upsConfig                      OBJECT IDENTIFIER ::=  { ups 5 }
+upsControl                     OBJECT IDENTIFIER ::=  { ups 6 }
+upsTest                        OBJECT IDENTIFIER ::=  { ups 7 }
+
+upsBaseIdent                   OBJECT IDENTIFIER ::=  { upsIdent 1 }
+upsAdvanceIdent                OBJECT IDENTIFIER ::=  { upsIdent 2 }
+
+upsBaseBattery                 OBJECT IDENTIFIER ::=  { upsBattery 1 }
+upsAdvanceBattery              OBJECT IDENTIFIER ::=  { upsBattery 2 }
+
+upsBaseInput                   OBJECT IDENTIFIER ::=  { upsInput 1 }
+upsAdvanceInput                OBJECT IDENTIFIER ::=  { upsInput 2 }
+
+upsBaseOutput                  OBJECT IDENTIFIER ::=  { upsOutput 1 }
+upsAdvanceOutput               OBJECT IDENTIFIER ::=  { upsOutput 2 }
+
+upsBaseConfig                  OBJECT IDENTIFIER ::=  { upsConfig 1 }
+upsAdvanceConfig               OBJECT IDENTIFIER ::=  { upsConfig 2 }
+
+upsBaseControl                 OBJECT IDENTIFIER ::=  { upsControl 1 }
+upsAdvanceControl              OBJECT IDENTIFIER ::=  { upsControl 2 }
+
+upsBaseTest                    OBJECT IDENTIFIER ::=  { upsTest 1 }
+upsAdvanceTest                 OBJECT IDENTIFIER ::=  { upsTest 2 }
+
+
+eSwitchIdent                   OBJECT IDENTIFIER ::=  { eswitch 1 }
+eSwitchBase                    OBJECT IDENTIFIER ::=  { eswitch 2 }
+
+
+
+-- object types
+-- the cpsmgmt group
+-- the mconfig group
+mconfigNumTrapAccepters OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The number of receivers to send traps to."
+   ::= { mconfig 1 }
+
+mconfigTrapAccepterTable OBJECT-TYPE
+   SYNTAX SEQUENCE OF MconfigTrapAccepterEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "A list of receivers to send traps to. The numbers of
+       entries are given by the value of mconfigNumTrapAccepters."
+   ::= { mconfig 2 }
+
+mconfigTrapAccepterEntry OBJECT-TYPE
+   SYNTAX MconfigTrapAccepterEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "The receivers to send traps to."
+   INDEX  { trapIndex }
+   ::= { mconfigTrapAccepterTable 1 }
+
+MconfigTrapAccepterEntry ::=
+   SEQUENCE {
+      trapIndex
+         INTEGER,
+      accepterAddr
+         IpAddress,
+      communityString
+          DisplayString,
+      severityDegree
+         INTEGER,
+      accepterActive
+         INTEGER
+   }
+
+trapIndex OBJECT-TYPE
+   SYNTAX INTEGER(1..10)
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The trap receiver entry index."
+   ::= { mconfigTrapAccepterEntry 1 }
+
+accepterAddr OBJECT-TYPE
+   SYNTAX IpAddress
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The trap receiver IP address."
+   ::= { mconfigTrapAccepterEntry 2 }
+
+communityString OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The trap receiver community name."
+   ::= { mconfigTrapAccepterEntry 3 }
+
+severityDegree OBJECT-TYPE
+   SYNTAX INTEGER {
+      information(1),
+      warning(2),
+      severe(3)
+   }
+   ACCESS read-only
+   STATUS obsolete
+   DESCRIPTION
+      "The trap receiver severity level. Traps are marked in severity level
+       as informational(1), warning(2), severe(3). Only send the traps of
+       equal or greater severity than this value to the receiver."
+   ::= { mconfigTrapAccepterEntry 4 }
+
+accepterActive OBJECT-TYPE
+   SYNTAX INTEGER   {
+      yes (1),
+      no  (2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "A receiver will accept traps if yes, and none if no."
+   ::= { mconfigTrapAccepterEntry 5 }
+
+mconfigDHCPEnabled OBJECT-TYPE
+   SYNTAX INTEGER {
+      yes (1),
+      no  (2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The system will automatically obtain its IP from a DHCP server if yes,
+       and none if no."
+   ::= { mconfig 3 }
+
+mconfigMyAddr OBJECT-TYPE
+   SYNTAX IpAddress
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The system IP address."
+   ::= { mconfig 4 }
+
+
+-- The mtrapinfo group
+-- These OIDs allows CPS traps to be sent with additional arguments
+-- which may not be defined in the CPS MIB.
+mtrapinfoInteger OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "Allow CPS traps with an integer argument for providing detail
+       information. Not being defined in the MIB, only reply 0."
+   ::= { mtrapinfo 1 }
+
+mtrapinfoIpAddress OBJECT-TYPE
+   SYNTAX IpAddress
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "Allow CPS traps with an IP address argument for providing detail
+       information. Not being defined in the MIB, only reply 0.0.0.0."
+   ::= { mtrapinfo 2 }
+
+mtrapinfoString OBJECT-TYPE
+   SYNTAX  DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "Allow CPS traps with an octet string argument for providing detail
+       information. Not being defined in the MIB, only reply a NULL string."
+   ::= { mtrapinfo 3 }
+
+mtrapinfoGauge OBJECT-TYPE
+   SYNTAX  Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "Allow CPS traps with an Gauge argument for providing detail
+       information. Not being defined in the MIB, only reply 0."
+   ::= { mtrapinfo 4 }
+
+mtrapinfoTimeTicks OBJECT-TYPE
+   SYNTAX TimeTicks
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "Allow CPS traps with an TimeTicks argument for providing detail
+       information. Not being defined in the MIB, only reply 0."
+   ::= { mtrapinfo 5 }
+
+
+-- the ups group
+-- the upsIdent group
+-- the upsBaseIdent
+upsBaseIdentModel OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS model name."
+   ::= { upsBaseIdent 1 }
+
+upsBaseIdentName OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS identified name could be set by the administrator."
+   ::= { upsBaseIdent 2 }
+
+
+-- the upsAdvanceIdent group
+upsAdvanceIdentFirmwareRevision OBJECT-TYPE
+   SYNTAX DisplayString 
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS firmware revision."
+   ::= { upsAdvanceIdent 1 }
+
+upsAdvanceIdentDateOfManufacture OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS manufacture date in mm/dd/yy format."
+   ::= { upsAdvanceIdent 2 }
+
+upsAdvanceIdentSerialNumber OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS serial number in the internal microprocessor."
+   ::= { upsAdvanceIdent 3 }
+
+upsAdvanceIdentAgentFirmwareRevision OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The SNMP agent firmware revision."
+   ::= { upsAdvanceIdent 4 }
+
+
+-- the upsBattery group
+-- the upsBaseBattery group
+upsBaseBatteryStatus OBJECT-TYPE
+   SYNTAX INTEGER  {
+      unknown(1),
+      batteryNormal(2),
+      batteryLow(3)
+   }
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS battery status.  A batteryLow(3) value means the
+       battery will be exhausted soon under the current load.
+       The amount of low battery run time can be configured by the
+       upsAdvanceConfigLowBatteryRunTime."
+   ::= { upsBaseBattery 1 }
+
+upsBaseBatteryTimeOnBattery OBJECT-TYPE
+   SYNTAX TimeTicks 
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS wasted battery time since the UPS has transfered to
+       backup mode."
+   ::= { upsBaseBattery 2 }
+
+upsBaseBatteryLastReplaceDate OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS batteries last replaced date in mm/dd/yy format.
+       This value is originally set when manufactured. If batteries
+       replaced, administrator should reset this value."
+   ::= { upsBaseBattery 3 }
+
+
+-- the upsAdvanceBattery group
+upsAdvanceBatteryCapacity OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The battery capacity expressed in percentage."
+   ::= { upsAdvanceBattery 1 }
+
+upsAdvanceBatteryVoltage OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The battery voltage expressed in 1/10 VDC."
+   ::= { upsAdvanceBattery 2 }
+
+upsAdvanceBatteryTemperature OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS battery temperature expressed in Celsius."
+   ::= { upsAdvanceBattery 3 }
+
+upsAdvanceBatteryRunTimeRemaining OBJECT-TYPE
+   SYNTAX TimeTicks
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS battery remaining run time."
+   ::= { upsAdvanceBattery 4 }
+
+upsAdvanceBatteryReplaceIndicator OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noBatteryNeedsReplacing(1),
+      batteryNeedsReplacing(2)
+   }
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "This value indicates if UPS batteries need to be replaced."
+   ::= { upsAdvanceBattery 5 }
+
+upsAdvanceBatteryFullChargeVoltage OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The battery charged voltage expressed in 1/10 VDC."
+   ::= { upsAdvanceBattery 6 }
+
+upsAdvanceBatteryCurrent OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The battery current expressed in percentage."
+   ::= { upsAdvanceBattery 7 }
+
+
+-- the upsBaseInput group
+upsBaseInputPhase OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The AC input phase."
+   ::= { upsBaseInput 1 }
+
+
+-- the upsAdvanceInput group
+upsAdvanceInputLineVoltage OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The input line voltage in 1/10 VAC."
+   ::= { upsAdvanceInput 1 }
+
+upsAdvanceInputMaxLineVoltage OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The maximum input line voltage in 1/10 VAC over the
+       previous 1 minute period."
+   ::= { upsAdvanceInput 2 }
+
+upsAdvanceInputMinLineVoltage OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The minimum input line voltage in 1/10 VAC over the
+       previous 1 minute period."
+   ::= { upsAdvanceInput 3 }
+
+upsAdvanceInputFrequency OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The input line frequency in 1/10 Hz."
+   ::= { upsAdvanceInput 4 }
+
+upsAdvanceInputLineFailCause OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noTransfer(1),
+      highLineVoltage(2),
+      brownout(3),
+      selfTest(4)
+   }
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The reason of UPS power failure.
+       This value is set to:
+       - noTransfer(1), if UPS is in utility mode.
+       - highLineVoltage(2), if UPS switch to battery mode by reason of
+         input voltage over the high transfer vloltage.
+       - brownout(3), if UPS switch to battery mode by reason of
+         input voltage under the low transfer vloltage.
+       - selfTest(4), if the UPS was commanded to do a self test."
+   ::= { upsAdvanceInput 5 }
+
+
+-- the upsBaseOutput group
+upsBaseOutputStatus OBJECT-TYPE
+   SYNTAX INTEGER  {
+      unknown(1),
+      onLine(2),
+      onBattery(3),
+      onBoost(4),
+      onSleep(5),
+      off(6),
+      rebooting(7)
+   }
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS output status."
+   ::= { upsBaseOutput 1 }
+
+upsBaseOutputPhase OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The output phase."
+   ::= { upsBaseOutput 2 }
+
+
+-- the upsAdvanceOutput group
+upsAdvanceOutputVoltage OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS output voltage in 1/10 VAC."
+   ::= { upsAdvanceOutput 1 }
+
+upsAdvanceOutputFrequency OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS output frequency in 1/10 Hz."
+   ::= { upsAdvanceOutput 2 }
+
+upsAdvanceOutputLoad OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS output load expressed in percentage"
+   ::= { upsAdvanceOutput 3 }
+
+upsAdvanceOutputCurrent OBJECT-TYPE
+   SYNTAX Gauge
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The UPS output current in ampres."
+   ::= { upsAdvanceOutput 4 }
+
+-- the upsBaseConfig group
+upsBaseConfigNumDevices OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The number of equipment plugged into the UPS."
+   ::= { upsBaseConfig 1 }
+
+upsBaseConfigDeviceTable OBJECT-TYPE
+   SYNTAX SEQUENCE OF UpsBaseConfigDeviceEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "A list of equipment plugged into the UPS.
+       The numbers of entries are given by the value of
+       upsBaseConfigNumDevices."
+   ::= { upsBaseConfig 2 }
+
+upsBaseConfigDeviceEntry OBJECT-TYPE
+   SYNTAX UpsBaseConfigDeviceEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "The equipment plugged in to the UPS."
+   INDEX  { deviceIndex }
+   ::= { upsBaseConfigDeviceTable 1 }
+
+UpsBaseConfigDeviceEntry ::=
+   SEQUENCE {
+      deviceIndex
+         INTEGER,
+      deviceName
+         DisplayString,
+      vaRating
+         INTEGER,
+      acceptThisDevice
+         INTEGER
+   }
+
+deviceIndex OBJECT-TYPE
+   SYNTAX INTEGER(1..255)
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The index of the equipment plugged into the UPS."
+   ::= { upsBaseConfigDeviceEntry 1 }
+
+deviceName OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The name of the equipment plugged into the UPS."
+   ::= { upsBaseConfigDeviceEntry 2 }
+
+vaRating OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The VA rating of the equipment plugged into the UPS."
+   ::= { upsBaseConfigDeviceEntry 3 }
+
+acceptThisDevice OBJECT-TYPE
+   SYNTAX INTEGER   {
+      yes(1),
+      no(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "An equipment is plugged if yes, unplugged if no."
+   ::= { upsBaseConfigDeviceEntry 4 }
+
+
+-- the upsAdvanceConfig group
+upsAdvanceConfigRatedOutputVoltage OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The standard UPS output voltage in VAC.
+       The possible values are 100, 110, 120, 127,
+       208, 220, 230, and 240.
+       If a value other than a possible value is set,
+       it will not be accepted."
+   ::= { upsAdvanceConfig 1 }
+
+upsAdvanceConfigHighTransferVolt OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "Adjust the high transfer vloltage in VAC.
+       The high transfer vloltage will become the UPS default value
+       subtracts this value. The allowed values depend on the output:
+       100-127 volt system allow settings of 0-15.
+       208-240 volt system allow settings of 0-30.
+       If the adjustable value is over the allowed values,
+       it will not be accepted."
+   ::= { upsAdvanceConfig 2 }
+
+upsAdvanceConfigLowTransferVolt OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "Adjust the low transfer vloltage in VAC.
+       The low transfer vloltage will become the UPS default value
+       adds this value. The allowed values depend on the output:
+       100-127 volt system allow settings of 0-15.
+       208-240 volt system allow settings of 0-30.
+       If the adjustable value is over the allowed values,
+       it will not be accepted."
+   ::= { upsAdvanceConfig 3 }
+
+upsAdvanceConfigAlarm OBJECT-TYPE
+   SYNTAX INTEGER  {
+      timed(1),
+      atLowBattery(2),
+      never(3)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "This value is set to handle audible alarms when power failure."
+   ::= { upsAdvanceConfig 4 }
+
+upsAdvanceConfigAlarmTimer OBJECT-TYPE
+   SYNTAX TimeTicks
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The time after power failure at which the UPS begins giving
+       audible alarms. This timer is effective only if the value of
+       upsAdvanceConfigAlarm is timed(1).
+       Accepted values are between 0 to 60 seconds.
+       If a value other than a supported value is set, the value
+       will not be accepted."
+   ::= { upsAdvanceConfig 5 }
+
+upsAdvanceConfigMinReturnCapacity OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The minimum battery capacity that UPS will return from
+       a low battery shutdown condition. The possible values
+       are between 0 to 40.
+       If a value other than a supported value is set, the value
+       will not be accepted."
+   ::= { upsAdvanceConfig 6 }
+
+upsAdvanceConfigSensitivity OBJECT-TYPE
+   SYNTAX INTEGER  {
+      auto(1),
+      low(2),
+      medium(3),
+      high(4)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The sensitivity of the UPS to power failure detection."
+   ::= { upsAdvanceConfig 7 }
+
+upsAdvanceConfigLowBatteryRunTime OBJECT-TYPE
+   SYNTAX TimeTicks
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The desired run time, in seconds, UPS will enter in a
+       low battery sequence. The possible values are
+       120, 300, 420, 600.
+       If a value other than a supported value is set, the value
+       will not be accepted."
+   ::= { upsAdvanceConfig 8 }
+
+upsAdvanceConfigReturnDelay OBJECT-TYPE
+   SYNTAX TimeTicks
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The delay time the UPS will turn on after power recovery.
+       The value is also used in a 'reboot' or 'wake up' sequence.
+       The possible values are 0, 60, 180, 300 seconds.
+       If a value other than a supported value is set, the value
+       will not be accepted."
+   ::= { upsAdvanceConfig 9 }
+
+upsAdvanceConfigShutoffDelay OBJECT-TYPE
+   SYNTAX TimeTicks
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The delay time the UPS will remain on after receiving a
+       turn off command.  The possible values are between 3 to 
+       99 minutes.
+       If a value other than a supported value is set, the value
+       will not be accepted."
+   ::= { upsAdvanceConfig 10 }
+
+upsAdvanceConfigUpsSleepTime OBJECT-TYPE
+   SYNTAX TimeTicks
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The time for the UPS to enter sleep mode by user's request.
+       Without regard to the utility state the UPS will not provide
+       output power in sleep mode. Output power will recover when
+       specified time has elapsed.
+       Any setting value is accepted, however the UPS only recognizes
+       increasing in minutes."
+   ::= { upsAdvanceConfig 11 }
+
+
+upsAdvanceConfigSetEEPROMDefaults OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noSetEEPROMDefaults(1),
+      setEEPROMDefaults(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "Reset the UPS EEPROM parameters to default values."
+   ::= { upsAdvanceConfig 12 }
+
+-- the upsBaseControl group
+upsBaseControlConserveBattery OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noTurnOffUps(1),
+      turnOffUpsToConserveBattery(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS on battery will enter sleeping when the variable is set
+       to turnOffUpsToConserveBattery(2). When utility power recovers
+       the UPS will turn back on. Trying to turn off a UPS that is
+       not on battery mode will cause badValue error.
+       It is no effective to set this value to noTurnOffUps(1)."
+   ::= { upsBaseControl 1 }
+
+
+-- the upsAdvanceControl group
+upsAdvanceControlUpsOff OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noTurnUpsOff(1),
+      turnUpsOff(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will shutdown when the variable is set to turnUpsOff(2).
+       Without regard to the utility state the UPS will not provide
+       output power in this state.
+       It is no effective to set this value to noTurnUpsOff(1)."
+   ::= { upsAdvanceControl 1 }
+
+upsAdvanceControlRebootUps OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noRebootUps(1),
+      rebootUps(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will shutdown and turn back on when the variable is
+       set to rebootUps(2).
+       It is no effective to set this value to noRebootUps(1)."
+   ::= { upsAdvanceControl 2 }
+
+upsAdvanceControlUpsSleep OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noPutUpsToSleep(1),
+      putUpsToSleep(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will enter sleep mode for the time specified by
+       upsAdvanceConfigUpsSleepTime when the variable is set
+       to putUpsToSleep(2).
+       Without regard to the utility state the UPS will not provide
+       output power in sleep mode. Output power will recover when
+       specified time has elapsed.
+       It is no effective to set this value to noPutUpsToSleep(1)."
+   ::= { upsAdvanceControl 3 }
+
+upsAdvanceControlSimulatePowerFail OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noSimulatePowerFailure(1),
+      simulatePowerFailure(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will transfer to backup mode when the variable is set
+       to simulatePowerFailure(2).
+       It is no effective to set this value to noFlashAndBeep(1)."
+   ::= { upsAdvanceControl 4 }
+
+upsAdvanceControlFlashAndBeep OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noFlashAndBeep(1),
+      flashAndBeep(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will beep and simultaneously turn on the panel lights
+       when the variable is set to flashAndBeep(2).
+       It is no effective to set this value to noSimulatePowerFailure(1)."
+   ::= { upsAdvanceControl 5 }
+
+upsAdvanceControlTurnOnUPS OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noTurnOnUPS(1),
+      turnOnUPS(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will turned on immediately when the variable is set
+       to turnOnUPS(2).
+       It is no effective to set this value to noTurnOnUPS(1)."
+   ::= { upsAdvanceControl 6 }
+
+
+-- the upsTest group
+-- the upsAdvanceTest group
+upsAdvanceTestDiagnosticSchedule OBJECT-TYPE
+   SYNTAX INTEGER  {
+      unknown(1),
+      biweekly(2),
+      weekly(3),
+      atTurnOn(4),
+      never(5)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The schedule of the UPS automatic selftest."
+   ::= { upsAdvanceTest 1 }
+
+upsAdvanceTestDiagnostics OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noTestDiagnostics(1),
+      testDiagnostics(2)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will do a diagnostic selftest when the variable is set
+       to testDiagnostics(2).
+       It is no effective to set this value to noTestDiagnostics(1)."
+   ::= { upsAdvanceTest 2 }
+
+upsAdvanceTestDiagnosticsResults OBJECT-TYPE
+   SYNTAX INTEGER {
+      ok(1),
+      failed(2),
+      invalidTest(3),
+      testInProgress(4)
+   }
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The last UPS selftest result."
+   ::= { upsAdvanceTest 3 }
+
+upsAdvanceTestLastDiagnosticsDate OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The last UPS selftest date in mm/dd/yy format."
+   ::= { upsAdvanceTest 4 }
+
+upsAdvanceTestIndicators OBJECT-TYPE
+   SYNTAX INTEGER {
+	noTestIndicators(1),
+	testIndicators(2)
+	}
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will perform a panel indicator test when the variable
+       is set to testIndicators(2).
+       It is no effective to set this value to noTestIndicators(1)."
+   ::= { upsAdvanceTest 5 }
+
+upsAdvanceTestRuntimeCalibration OBJECT-TYPE
+   SYNTAX INTEGER  {
+      noPerformCalibration(1),
+      performCalibration(2),
+      cancelCurrentCalibration(3)
+   }
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "UPS will discharge to calibrate the UPS runtime when the variable
+       is set to performCalibration(2).
+       This test runs until the UPS is in a low battery condition.
+       UPS will cancel the discharge after setting performCalibration(2)
+       when the variable is set to cancelCurrentCalibration(3).
+       It is no effective to set this value to noPerformCalibration(1).
+       The result of the runtime test will be stored in
+       upsAdvanceTestCalibrationResults."
+   ::= { upsAdvanceTest 6 }
+
+upsAdvanceTestCalibrationResults OBJECT-TYPE
+   SYNTAX INTEGER {
+      ok(1),
+      invalidCalibration(2),
+      calibrationInProgress(3)
+   }
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The last runtime calibration result.
+       This value means :
+       - ok(1), if a successful runtime calibration.
+       - invalidCalibration(2), if runtime calibration failure.
+       - calibrationInProgress(3), if calibration is processing now."
+   ::= { upsAdvanceTest 7 }
+
+upsAdvanceTestCalibrationDate OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The last UPS runtime calibration date"
+   ::= { upsAdvanceTest 8 }
+
+
+-- the eswitch group
+-- the eSwitchIdent group
+eSwitchIdentHardwareRev OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The hardware revision set at the factory."
+   ::= { eSwitchIdent 1 }
+
+eSwitchIdentFirmwareRev OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The firmware revision set at the factory."
+   ::= { eSwitchIdent 2 }
+
+eSwitchIdentDateOfManufacture OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The manufacture date in mm/dd/yy format."
+   ::= { eSwitchIdent 3 }
+
+eSwitchIdentModelName OBJECT-TYPE
+   SYNTAX DisplayString
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The model name set at the factory.
+       This value need to consist with safty report."
+   ::= { eSwitchIdent 4 }
+
+
+-- the eSwitchBase group
+eSwitchNumber OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The numbers of switch have been attached to the system."
+   ::= { eSwitchBase 1 }
+
+eSwitchBaseTable OBJECT-TYPE
+   SYNTAX SEQUENCE OF ESwitchBaseEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "A list of switch information. The number of entries is given
+       by the value of eSwitchNumber."
+   ::= { eSwitchBase 2 }
+
+eSwitchBaseEntry OBJECT-TYPE
+   SYNTAX ESwitchBaseEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "An entry information of the individual switch."
+   INDEX  { eSwitchID}
+   ::= { eSwitchBaseTable 1 }
+
+ESwitchBaseEntry ::=
+   SEQUENCE {
+      eSwitchID
+        INTEGER,
+      eSwitchOutletNum
+        INTEGER,
+      eSwitchOutletState
+        DisplayString
+   }
+
+eSwitchID OBJECT-TYPE
+   SYNTAX INTEGER(0..16)
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The power switch ID number."
+   ::= { eSwitchBaseEntry 1 }
+
+eSwitchOutletNum OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-only
+   STATUS mandatory
+   DESCRIPTION
+      "The number of outlets provided in the switch."
+   ::= { eSwitchBaseEntry 2 }
+
+eSwitchOutletState  OBJECT-TYPE
+   SYNTAX  DisplayString
+   ACCESS  read-only
+   STATUS  mandatory
+   DESCRIPTION
+      "Getting this OID will reply the status of all outlets in the switch.
+       '0' for outlet off, '1' for outlet on.
+       The index from left to right is outlet#8, #7, #6, #5, #4, #3, #2, #1.
+       For Example:
+       If the string is '01011010', it means the outlets status are the following:
+       outlet #8 is off,
+       outlet #7 is on,
+       outlet #6 is off,
+       outlet #5 is on,
+       outlet #4 is on,
+       outlet #3 is off,
+       outlet #2 is on,
+       outlet #1 is off.
+      "
+    ::= { eSwitchBaseEntry 3 }
+
+eSwitchBaseCtrTable OBJECT-TYPE
+   SYNTAX SEQUENCE OF ESwitchBaseCtrEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "A list of switch control parameters. The number of entries is given
+       by the value of eSwitchNumber."
+   ::= { eSwitchBase 3 }
+
+eSwitchBaseCtrEntry OBJECT-TYPE
+   SYNTAX ESwitchBaseCtrEntry
+   ACCESS not-accessible
+   STATUS mandatory
+   DESCRIPTION
+      "An entry control information of individual switches."
+   INDEX  { eSwitchCtrID}
+   ::= { eSwitchBaseCtrTable 1 }
+
+ESwitchBaseCtrEntry ::=
+   SEQUENCE {
+      eSwitchCtrID       
+        INTEGER,
+      eSwitchActOutlet   
+        INTEGER,
+      eSwitchActType     
+        INTEGER
+   }
+
+eSwitchCtrID OBJECT-TYPE
+   SYNTAX INTEGER(0..16)
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "Select the switch ID to be controlled."
+   ::= { eSwitchBaseCtrEntry 1 }
+
+eSwitchActOutlet OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The action outlets to be controlled."
+   ::= { eSwitchBaseCtrEntry 2 }
+
+eSwitchActType OBJECT-TYPE
+   SYNTAX INTEGER
+   ACCESS read-write
+   STATUS mandatory
+   DESCRIPTION
+      "The on/off type of the action outlets.
+      1 for duration off, 2 for duration on,
+      3 for immediately off, 4 for immediately on,
+      and 5 for reboot."
+   ::= { eSwitchBaseCtrEntry 3 }
+
+
+-- Traps
+-- Annotations are provided for Novell's NMS product
+communicationLost TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+       "SEVERE: Communication with the UPS has been lost. Trying to
+        reconstruct communication is in progress."
+   --#TYPE "CPS UPS: Communication lost"
+   --#SUMMARY "Communication with the UPS has been lost."
+   --#SEVERITY SEVERE
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 1
+
+upsOverload TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "SEVERE: The UPS has sensed a load over 100 percent of its rated load."
+   --#TYPE "CPS UPS: Overload"
+   --#SUMMARY "Sense a load over 100 percent of its rated load."
+   --#SEVERITY SEVERE
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 2
+
+upsDiagnosticsFailed TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "SEVERE: The UPS failed its internal selftest."
+   --#TYPE "CPS UPS: Selftest failed"
+   --#SUMMARY "The UPS has failed its internal selftest."
+   --#SEVERITY SEVERE
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 3
+
+upsDischarged TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "SEVERE: The UPS is in a battery discharg process."
+   --#TYPE "CPS UPS: batteries are discharged"
+   --#SUMMARY "The UPS batteries are discharged."
+   --#SEVERITY SEVERE
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 4
+
+upsOnBattery TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS has transfered to backup mode."
+   --#TYPE "CPS UPS: The UPS is on battery"
+   --#SUMMARY "The UPS has transfered to backup mode."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 5
+
+upsBoostOn TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS has enabled boost, low utility voltage."
+   --#TYPE "CPS UPS: Boost enable"
+   --#SUMMARY "The UPS has enabled boost, low utility voltage."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 6
+
+lowBattery TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "SEVERE: The UPS battery is low, soon to be exhausted."
+   --#TYPE "CPS UPS: Low battery"
+   --#SUMMARY "The UPS battery is low, soon to be exhausted."
+   --#SEVERITY SEVERE
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 7
+
+communicationEstablished TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATIONAL: Communication to the UPS has been established."
+   --#TYPE "CPS UPS: Communication established"
+   --#SUMMARY "Communication to the UPS has been established."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 8
+
+powerRestored TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATIONAL: Power restored, return from backup mode."
+   --#TYPE "CPS UPS: Power restored"
+   --#SUMMARY "Power restored, return from backup mode."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 9
+
+upsDiagnosticsPassed TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATIONAL: UPS internal selftest passed."
+   --#TYPE "CPS UPS: Selftest passed"
+   --#SUMMARY "UPS internal selftest passed."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 10
+
+returnFromLowBattery TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATIONAL: Returned from a low battery condition."
+   --#TYPE "CPS UPS: Low battery condition cleared"
+   --#SUMMARY "Returned from a low battery condition."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 11
+
+upsTurnedOff TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS has been turned off."
+   --#TYPE "CPS UPS: UPS turned off"
+   --#SUMMARY "The UPS has been turned off."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 12
+
+upsSleeping   TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS entered sleep mode. Output power will not 
+       be provided."
+   --#TYPE "CPS UPS: Entered sleep mode"
+   --#SUMMARY "Entered sleep mode. Output power will not be provided."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 13
+
+upsWokeUp TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATION: UPS woke up from sleep mode. Output power has be provided."
+   --#TYPE "CPS UPS: UPS woke up"
+   --#SUMMARY "UPS woke up from sleep mode. Output power has be provided."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 14
+
+upsRebootStarted TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS started its reboot sequence."
+   --#TYPE "CPS UPS: Starting reboot"
+   --#SUMMARY "The UPS started its reboot sequence."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 15
+
+upsOverTemp TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "SEVERE: The UPS inner temperature is too high."
+   --#TYPE "CPS UPS: UPS over temperature"
+   --#SUMMARY "The UPS inner temperature is too high."
+   --#SEVERITY SEVERE
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 16
+
+returnFromOverTemp TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATIONAL: The UPS over temperature condition cleared."
+   --#TYPE "CPS UPS: UPS over temperature cleared"
+   --#SUMMARY "The UPS over temperature condition cleared."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 17
+
+upsBuckOn TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS has enabled buck, high utility voltage."
+   --#TYPE "CPS UPS: Buck enable"
+   --#SUMMARY "The UPS has enabled buck, high utility voltage."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 18
+
+returnFromOverLoad TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATIONAL: The UPS has returned from a overload condition."
+   --#TYPE "CPS UPS: Returned from overload condition"
+   --#SUMMARY "The UPS has returned from a overload condition."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 19
+
+returnFromDischarged TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "INFORMATIONAL: The UPS has returned from a discharged condition."
+   --#TYPE "CPS UPS: Discharged condition cleared"
+   --#SUMMARY "The UPS has returned from a discharged condition."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 20
+
+upsScheduleShutdown TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS has started its schedule shutdown sequence."
+   --#TYPE "CPS UPS: Schedule shutdown"
+   --#SUMMARY "The UPS has started its schedule shutdown sequence."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 21
+
+upsEnterSleep TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS is in entering sleep mode sequence."
+   --#TYPE "CPS UPS: Entered sleep mode sequence"
+   --#SUMMARY "The UPS is in entering sleep mode sequence."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 22
+
+upsChargerFailure TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+       "WARNING: The battery charger is abnormal."
+   --#TYPE "CPS UPS: The charger failed."
+   --#SUMMARY "The battery charger is abnormal."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 23
+
+returnFromChargerFailure TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+       "INFORMATIONAL: The charger returned from a failure condition."
+   --#TYPE "CPS UPS: The charger failure cleared"
+   --#SUMMARY "The charger returned from a failure condition."
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 24
+
+upsTurnoffStarted TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS started turn off sequence."
+   --#TYPE "CPS UPS: Starting turn off"
+   --#SUMMARY "The UPS started its turn off sequence."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 25
+
+upsTurnedOn TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS has been turned on."
+   --#TYPE "CPS UPS: UPS turned on"
+   --#SUMMARY "The UPS has been turned on."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 26
+
+upsRemoteCommandFailed TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "WARNING: The UPS remote command failed."
+   --#TYPE "CPS UPS: Command failed"
+   --#SUMMARY "The UPS remote command failed."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 27
+
+upsCompelShutdown TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+      "SEVERE: The UPS is compelled to shutdown."
+   --#TYPE "CPS UPS: Shut down"
+   --#SUMMARY "The UPS is compelled to shutdown."
+   --#SEVERITY SEVERE
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE DEGRADED
+   ::= 29
+
+
+-- Outlet Traps
+outletChange TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+       "INFORMATIONAL: The outlet state has been changed."
+   --#TYPE "CPS UPS: Outlet state changed."
+   --#SUMMARY "The outlet state has been changed"
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 31
+
+
+-- Environment Traps
+envHighTemperatureViolation TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The environment high temperature threshold has been violated."
+   --#TYPE "CPS Environment Viewer: OverTemperature"
+   --#SUMMARY "The environment high temperature threshold has been violated."
+   --#ARGUMENTS { }
+   --#SEVERITY MAJOR
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 40
+
+envHighTemperatureBack TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "INFORMATION: The environment temperature returned from high value."
+   --#TYPE "CPS Environment Viewer: OverTemperature Returned"
+   --#SUMMARY "The environment temperature returned from high value."
+   --#ARGUMENTS { }
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 41
+
+envLowTemperatureViolation TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The environment low temperature threshold has been violated."
+   --#TYPE "CPS Environment Viewer: UnderTemperature"
+   --#SUMMARY "The environment low temperature threshold has been violated."
+   --#ARGUMENTS { }
+   --#SEVERITY MAJOR
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 42
+
+envLowTempBack TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "INFORMATION: The environment temperature returned from low value."
+   --#TYPE "CPS Environment Viewer: UnderTemperature Returned"
+   --#SUMMARY "The environment temperature returned from low value."
+   --#ARGUMENTS { }
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 43
+
+envHighHumidityViolation TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The environment high humidity threshold has been violated."
+   --#TYPE "CPS Environment Viewer: OverHumidity"
+   --#SUMMARY "The environment high humidity threshold has been violated."
+   --#ARGUMENTS { }
+   --#SEVERITY MAJOR
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 44
+
+envHighHumidityBack TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+	"INFORMATION: The environment humidity return from high value."
+   --#TYPE "CPS Environment Viewer: OverHumidity Returned"
+   --#SUMMARY "The environment humidity return from high value."
+   --#ARGUMENTS { }
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 45
+
+envLowHumidityViolation TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The environment low humidity threshold has been violated."
+   --#TYPE "CPS Environment Viewer: UnderHumidity"
+   --#SUMMARY "The environment low humidity threshold has been violated."
+   --#ARGUMENTS { }
+   --#SEVERITY MAJOR
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 46
+
+envLowHumdBack TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+	"INFORMATION: The environment humidity return from low value."
+   --#TYPE "CPS Environment Viewer: UnderHumidity Returned"
+   --#SUMMARY "The environment humidity return from low value."
+   --#ARGUMENTS { }
+   --#SEVERITY MAJOR
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 47
+
+envSmokeViolation TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The smoke threshold has been violated."
+   --#TYPE "CPS Environment Viewer: Smoke Alarm"
+   --#SUMMARY "The smoke threshold has been violated."
+   --#ARGUMENTS { }
+   --#SEVERITY MAJOR
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 48
+
+envSmokeViolationCleared TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The smoke violation has been cleared."
+   --#TYPE "CPS Environment Viewer: SmokeAlarm Returned"
+   --#SUMMARY "The smoke violation has been cleared."
+   --#ARGUMENTS { }
+   --#SEVERITY MAJOR
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 49
+
+envWaterViolation TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The water threshold has been violated."
+   --#TYPE "CPS Environment Viewer: Water Alarm"
+   --#SUMMARY "The water threshold has been violated."
+   --#ARGUMENTS { }
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 50
+
+envWaterViolationCleared TRAP-TYPE
+    ENTERPRISE cps
+    VARIABLES { mtrapinfoString }
+    DESCRIPTION
+       "WARNING: The water violation has been cleared."
+   --#TYPE "CPS Environment Viewer: WaterAlarm Returned"
+   --#SUMMARY "The water violation has been cleared."
+   --#ARGUMENTS { }
+   --#SEVERITY INFORMATIONAL
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE NONOPERATIONAL
+   ::= 51
+
+
+-- Misc. Traps
+failAuthViaHTTP TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+       "WARNING: Login authorization failure via HTTP."
+   --#TYPE "CPS: HTTP authorization failure."
+   --#SUMMARY "Login authorization failure via HTTP."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 61
+
+passwordChange TRAP-TYPE
+   ENTERPRISE cps
+   VARIABLES { mtrapinfoString }
+   DESCRIPTION
+       "WARNING: The password has been changed."
+   --#TYPE "CPS: Password changed."
+   --#SUMMARY "The password has been changed."
+   --#SEVERITY WARNING
+   --#TIMEINDEX 1
+   --#HELP ""
+   --#HELPTAG 0
+   --#STATE OPERATIONAL
+   ::= 62
+
+
+
+END
+

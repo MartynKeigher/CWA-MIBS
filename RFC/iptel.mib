@@ -1,0 +1,139 @@
+VERTICAL16-IPTEL-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+        OBJECT-TYPE
+                     FROM RFC-1212;
+             
+vertical OBJECT IDENTIFIER ::= { enterprises 2338 }  
+
+	--  Author  : Rajiv Anand
+	--  Version : 1.0
+	--  Date : May 20, 1999
+
+	iptel	OBJECT IDENTIFIER ::= {vertical 16}
+
+	IptelTrunkSize OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Number of Trunk"
+		::= { iptel 1 }
+
+	-- The Trunk Summary Table --
+
+	IpTelTrunkSummary OBJECT-TYPE
+		SYNTAX SEQUENCE OF IpTelTrunkInfo
+		ACCESS  not-accessible
+		STATUS  mandatory
+		DESCRIPTION	"Overview table of IPTel trunks"
+		::= { iptel 2 }
+
+	IpTelTrunkInfo OBJECT-TYPE
+		SYNTAX TrunkInfoStruct
+		ACCESS not-accessible
+		STATUS mandatory
+		DESCRIPTION "Entry in the IpTelTrunkSummary Table"
+		INDEX { TrunkIndex }
+		::= { IpTelTrunkSummary 1 }
+
+	TrunkInfoStruct ::= SEQUENCE {
+		TrunkIndex INTEGER,
+		TrunkState INTEGER,
+		CalledParty DisplayString,
+		CallingParty DisplayString,
+		RemoteGateway DisplayString,
+		DescriptionIndex INTEGER,
+		LocalAlarmThreshold INTEGER,
+		RemoteAlarmThreshold INTEGER
+	}
+
+	TrunkIndex OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Trunk Number in the trunk table"
+		::= {IpTelTrunkInfo 1}
+
+	TrunkState OBJECT-TYPE
+		SYNTAX INTEGER { not-configured(0), 
+			out_of_service(1), 
+			Initializing(2), 
+			Idle(3),
+			Outgoing(4),
+			Incoming(5),
+			Connected(6),
+			Disconnecting(7) }
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Trunk State"
+		::= {IpTelTrunkInfo 2}
+
+	CalledParty OBJECT-TYPE
+		SYNTAX DisplayString
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Number of the Called Party"
+		::= {IpTelTrunkInfo 3}
+		
+	CallingParty OBJECT-TYPE
+		SYNTAX DisplayString
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Number of the Calling Party"
+		::= {IpTelTrunkInfo 4}
+
+	RemoteGateway OBJECT-TYPE
+		SYNTAX DisplayString
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Remote Gateway Number"
+		::= {IpTelTrunkInfo 5}
+
+	LocalAlarmThreshold OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Current levels of thresholds reached.
+		It is a bit	field indicating following thresholds:
+		== BIT ===  === DESCRIPTION ===
+			0			Jitter
+			1			NetworkLost
+			2			Network To Host Errors
+			3			Host To Network Errors
+			4			DSP To Host Errors
+			5			Host to DSP Errors
+		================================"
+		::= {IpTelTrunkInfo 6}
+
+	RemoteAlarmThreshold OBJECT-TYPE
+		SYNTAX INTEGER
+		ACCESS read-only
+		STATUS mandatory
+		DESCRIPTION "Current levels of thresholds reached.
+		For a description of bit fields refer to LocalThreshold"
+		::= {IpTelTrunkInfo 7}
+
+
+-- Trap definitions
+
+IpTelReconfigComplete TRAP-TYPE
+	ENTERPRISE  vertical
+	VARIABLES {IptelTrunkSize}
+	DESCRIPTION
+		" This notification is sent when the reconfiguration command completes."
+	::= 64
+
+IpTelTrunkFailure TRAP-TYPE
+	ENTERPRISE vertical
+	VARIABLES {TrunkIndex}
+	DESCRIPTION "Issued when the specified Trunk has failed."
+	::= 65
+
+IpTelTrunkAlarmInfo TRAP-TYPE
+	ENTERPRISE vertical
+	VARIABLES {TrunkIndex, LocalAlarmThreshold, RemoteAlarmThreshold}
+	DESCRIPTION "Informational Alarm associated with some parameter threshold
+	being reached."
+	::= 66
+
+END
