@@ -1,0 +1,306 @@
+    WINDOWS-NT-PERFORMANCE DEFINITIONS ::= BEGIN
+    IMPORTS
+        enterprises
+            FROM RFC1155-SMI
+        OBJECT-TYPE
+            FROM RFC-1212
+        DisplayString
+            FROM RFC1213-MIB;
+
+   vertical OBJECT IDENTIFIER ::= { enterprises 2338 }  
+
+
+    -- instantOffice VoiceMail MIB
+
+    vminstantOffice-VoiceMailTable OBJECT-TYPE
+        SYNTAX SEQUENCE OF vminstantOffice-VoiceMailEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "A table containing performance information for instances of 'instantOffice-VoiceMail' objects."
+        ::= { vertical 17 }
+
+    vminstantOffice-VoiceMailEntry OBJECT-TYPE
+        SYNTAX vminstantOffice-VoiceMailEntry
+        ACCESS not-accessible
+        STATUS mandatory
+        DESCRIPTION
+            "Performance information for one particular instance of 'instantOffice-VoiceMail' object."
+        INDEX { vminstantOffice-VoiceMailIndex }
+        ::= { vminstantOffice-VoiceMailTable 1 }
+
+    vminstantOffice-VoiceMailEntry ::=
+        SEQUENCE {
+            vminstantOffice-VoiceMailIndex INTEGER,
+            vminstantOffice-VoiceMailInstance DisplayString,
+            vmIncomingCalls INTEGER,
+            vmMessagesSent INTEGER,
+            vmMsgSendFailed INTEGER,
+            vmMessageDelete INTEGER,
+            vmMailboxLogon INTEGER,
+            vmMailboxLogoff INTEGER,
+            vmTooManyErrors INTEGER,
+            vmTooShort INTEGER,
+            vmRestart INTEGER,
+            vmMWIOn INTEGER,
+            vmMWIOff INTEGER,
+            vmMWIFail INTEGER,
+            vmTimeoutToOperator INTEGER,
+            vmZeroOperator INTEGER,
+            vmErrorOperator INTEGER,
+            vmErrorPassword INTEGER,
+            vmDiskFull INTEGER,
+            vmExternalDirectInCalls INTEGER,
+            vmExternalForwardInCalls INTEGER,
+            vmInternalDirectInCalls INTEGER,
+            vmInternalForwardInCalls INTEGER,
+            vmNewMessage INTEGER,
+            vmForwardMessage INTEGER,
+            vmReplyMessage INTEGER,
+            vmMultiAddress INTEGER,
+            vmNameRecord INTEGER,
+            vmGreetRecord INTEGER,
+            vmMessagesCreated INTEGER
+        }
+
+    vminstantOffice-VoiceMailIndex OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Index."
+        ::= { vminstantOffice-VoiceMailEntry 1 }
+
+    vminstantOffice-VoiceMailInstance OBJECT-TYPE
+        SYNTAX DisplayString
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Instance name."
+        ::= { vminstantOffice-VoiceMailEntry 2 }
+
+    vmIncomingCalls OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of Incoming Calls."
+        ::= { vminstantOffice-VoiceMailEntry 3 }
+
+    vmMessagesSent OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of Messages Sent."
+        ::= { vminstantOffice-VoiceMailEntry 4 }
+
+    vmMsgSendFailed OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of failures caused by an error in the Msg Subsystem during message send."
+        ::= { vminstantOffice-VoiceMailEntry 5 }
+
+    vmMessageDelete OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of messages deleted."
+        ::= { vminstantOffice-VoiceMailEntry 6 }
+
+    vmMailboxLogon OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times users logged on successfully."
+        ::= { vminstantOffice-VoiceMailEntry 7 }
+
+    vmMailboxLogoff OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times users logged off their mailbox (versus abandoned)."
+        ::= { vminstantOffice-VoiceMailEntry 8 }
+
+    vmTooManyErrors OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times callers were dropped because they made too many errors."
+        ::= { vminstantOffice-VoiceMailEntry 9 }
+
+    vmTooShort OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times messages recorded were too short."
+        ::= { vminstantOffice-VoiceMailEntry 10 }
+
+    vmRestart OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times the AA/VMS application was restarted/reloaded."
+        ::= { vminstantOffice-VoiceMailEntry 11 }
+
+    vmMWIOn OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of requests to turn MWI On."
+        ::= { vminstantOffice-VoiceMailEntry 12 }
+
+    vmMWIOff OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of requests to turn MWI Off."
+        ::= { vminstantOffice-VoiceMailEntry 13 }
+
+    vmMWIFail OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of MWI (On/Off) requests that failed."
+        ::= { vminstantOffice-VoiceMailEntry 14 }
+
+    vmTimeoutToOperator OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of calls transferred to Operator because of timeout."
+        ::= { vminstantOffice-VoiceMailEntry 15 }
+
+    vmZeroOperator OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of calls transferred to Operator because caller dialed 0."
+        ::= { vminstantOffice-VoiceMailEntry 16 }
+
+    vmErrorOperator OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of calls transferred to Operator because of too many errors."
+        ::= { vminstantOffice-VoiceMailEntry 17 }
+
+    vmErrorPassword OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of calls dropped because of too many password errors."
+        ::= { vminstantOffice-VoiceMailEntry 18 }
+
+    vmDiskFull OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times disk was too full to take a message."
+        ::= { vminstantOffice-VoiceMailEntry 19 }
+
+    vmExternalDirectInCalls OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of direct external (trunk) calls into AA/VMS."
+        ::= { vminstantOffice-VoiceMailEntry 20 }
+
+    vmExternalForwardInCalls OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of external calls forwarding into AA/VMS."
+        ::= { vminstantOffice-VoiceMailEntry 21 }
+
+    vmInternalDirectInCalls OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of direct internal (station) calls into AA/VMS."
+        ::= { vminstantOffice-VoiceMailEntry 22 }
+
+    vmInternalForwardInCalls OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of internal calls forwarding into AA/VMS."
+        ::= { vminstantOffice-VoiceMailEntry 23 }
+
+    vmNewMessage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of new messages recorded and sent by logged on users."
+        ::= { vminstantOffice-VoiceMailEntry 24 }
+
+    vmForwardMessage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of forwarded messages recorded and sent by loggged on users."
+        ::= { vminstantOffice-VoiceMailEntry 25 }
+
+    vmReplyMessage OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of reply messages recorded and sent by logged on users."
+        ::= { vminstantOffice-VoiceMailEntry 26 }
+
+    vmMultiAddress OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Numbe of messages sent that had more than one address."
+        ::= { vminstantOffice-VoiceMailEntry 27 }
+
+    vmNameRecord OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times a Name message was recorded."
+        ::= { vminstantOffice-VoiceMailEntry 28 }
+
+    vmGreetRecord OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of times a Greeting message was recorded."
+        ::= { vminstantOffice-VoiceMailEntry 29 }
+
+    vmMessagesCreated OBJECT-TYPE
+        SYNTAX INTEGER
+        ACCESS read-only
+        STATUS mandatory
+        DESCRIPTION
+            "Number of messages created."
+        ::= { vminstantOffice-VoiceMailEntry 30 }
+
+    END
