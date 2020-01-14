@@ -27,13 +27,15 @@ Currently, the process of importing MIBS can be 'tedious' due to nature of how M
 
 ### What denotes a successful 'loading of mibs'?
 
-When the Automate Control Center is launched, part of the process is to read the MIBS that are in the 'LTShare\MIBS\RFC' folder. The contents of this folder are then synced to 'C:\ProgramData\LabTech Client\MIBS\RFC' on the machine launching the Control Center. **__This is a one-way sync__**. *From: LTShare To: ProgramData*. The Command console shows the progress of the MIBs loading from the ProgramData folder and reports the finished state. A successful loading of mibs reports like this:
+When the Automate Control Center is launched, part of the process is to read the MIBS that are in the 'LTShare\MIBS\RFC' folder. The contents of this folder are then synced to 'C:\ProgramData\LabTech Client\MIBS\RFC' on the machine launching the Control Center. **__This is a one-way sync__**. *From: LTShare To: ProgramData*. The Command console shows the progress of the MIBs loading from the ProgramData folder and reports the finished state.
+
+A successful loading of MIBs reports like this:
 
 ![Command Console](https://i.imgur.com/40ozdG6.png)
 
-Error messages vary based on which MIB(s) failed to import:
+Error messages vary based on which MIB(s) failed to import. An unsuccessful loading of MIBs reports like this:
 
-*TODO: Add pic of failed import here!*
+![Command Console](https://i.imgur.com/r8tyDwb.jpg)
 
 
 ### How do I use this repo?
