@@ -40,7 +40,24 @@ Error messages vary based on which MIB(s) failed to import. An unsuccessful load
 
 ### How do I use this repo?
 
-After downloading a release of this project, simply REPLACE the contents of LTShare\MIBS\RFC with what is provided in the release. 
+After downloading a release of this project,
+
+- Close the Control Center. (Thick client).
+
+- Replace the contents of \\LTShare\MIBS\RFC with the contents of the downlaod.
+
+- Delete 2 folders on the server\workstation you are running the Control Center from:
+
+    - C:\ProgramData\LabTech Client
+
+    - C:\ProgramData\LabTech Plugins
+
+- Restart the 'ConnectWise File Service' service on the Automate Server.
+
+- Re-Open the Control Center & log in.
+
+- The NEW MIBS will now load successfully. 
+
 
 This repo, and the maintaining of it, is a personal project and in no way officially supported by ConnectWise. 
 
