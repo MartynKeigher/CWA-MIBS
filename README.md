@@ -44,7 +44,7 @@ After downloading a release of this project,
 
 - Close the Control Center. (Thick client).
 
-- Replace the contents of \\LTShare\MIBS\RFC with the contents of the downlaod.
+- Replace the contents of \\LTShare\MIBS\RFC with the contents of this project's latest release.
 
 - Delete 2 folders on the server\workstation you are running the Control Center from:
 
