@@ -9,7 +9,7 @@ Currently, the process of importing MIBS can be 'tedious' due to nature of how M
 
 ### How will this project work?
 
-- The initial commit of this repo (aka: Release v1.0) is the default 'out-of the box' set of MIB files, that come with ConnectWise Automate **2020.1**.
+- The initial commit of this repo (aka: Release v1.0) is the default 'out-of the box' set of MIB files, that came with ConnectWise Automate **2020.1**.
 
 - Each future release of this repo, from that point on, will contain more MIBS that, once verified of a successful MIB load (in Automate), can be used for Network Monitoring within the ConnectWise Automate product.
 
