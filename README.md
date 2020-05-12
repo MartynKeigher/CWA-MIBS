@@ -13,7 +13,7 @@ Currently, the process of importing MIBS can be 'tedious' due to nature of how M
 
 - Each future release of this repo, from that point on, will contain more MIBS that, once verified of a successful MIB load (in Automate), can be used for Network Monitoring within the ConnectWise Automate product.
 
-- Newly added MIBS will be documented with each release.
+- Newly added MIBS will be [documented here](https://github.com/MartynKeigher/Automate-MIBS/releases) with each release.
 
 
 ### High-level workflow
