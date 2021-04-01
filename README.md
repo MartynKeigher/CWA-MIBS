@@ -63,8 +63,20 @@ This repo, and the maintaining of it, is a personal project and in no way offici
 
 
 ### How can I contribute?
+This is only an overview - you might need to research some parts of this. 
 
-*TODO: Add How to PR stuff here!*
+You will need a basic understanding of git including: 
+ - clone (making a copy of a repository)
+ - pull (get commited changes)
+ - commit (make changes)
+ - push (send changes)
+I'll let you look those up yourself. Git can be a complex system so try not to get distracted beyond knowing what those commands do because for this they're all you've going to need for this. 
+
+You will need to have a Github account, then Fork this repo (look in top right of this page) which makes a copy of it in your account.
+
+Clone _your_ repo to your computer and make all the changes you want and test them. Commit all your change to git and push them to your Github repo.  
+
+AFTER you've tested and are SURE the code in your Github repo works properly then come back to this repo (https://github.com/MartynKeigher/CWA-MIBS) and create a Pull Request (aka PR - see https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests) from the Github web interface. This will notify Martyn that you're submitting changes to be incorporated into the his repo, and make it easy for him to review and merge them in.  
 
 ---
 While every effort is made to ensure that each release will give 100% success rate, please [report an issue](https://github.com/MartynKeigher/Automate-MIBS/issues) if you come across any! 
